@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "lato"
+version = "0.1.2"
+description = "Lato is a Python microframework designed for building modular monoliths and loosely coupled applications."
+authors = ["Przemysław Górecki <przemyslaw.gorecki@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/pgorecki/lato"
+homepage = "https://github.com/pgorecki/lato"
+documentation = "https://github.com/pgorecki/lato/docs"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pytest = "^7.4.2"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^3.5.0"
+build = "^1.0.3"
+twine = "^4.0.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
