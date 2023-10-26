@@ -2,6 +2,8 @@ from collections import defaultdict
 
 from utils import OrderedSet
 
+from lato.message import Event, Task
+
 
 class ApplicationModule:
     def __init__(self, name: str):
@@ -19,13 +21,21 @@ class ApplicationModule:
         """
         Decorator for registering use cases by name
         """
-        if callable(alias):
+        try:
+            is_task_or_event = issubclass(alias, (Task, Event))
+        except TypeError:
+            is_task_or_event = False
+
+        if callable(alias) and not is_task_or_event:
+            # @app.handle(my_function)
             func = alias
             alias = func.__name__
             assert len(self._handlers[alias]) == 0
             self._handlers[alias].add(func)
             return func
 
+        # @app.handle("my_function")
+        # @app.handle(MyTask)
         def decorator(func):
             """
             Decorator for registering use cases by name

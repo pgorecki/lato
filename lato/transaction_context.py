@@ -4,6 +4,8 @@ from typing import Any
 
 from dependency_provider import DependencyProvider
 
+from lato.message import Event, Task
+
 
 class TransactionContext:
     """A context spanning a single transaction for execution of a function"""
@@ -60,7 +62,7 @@ class TransactionContext:
         return p
 
     def call(self, func, *func_args, **func_kwargs) -> Any:
-        if type(func) is str:
+        if isinstance(func, str):
             try:
                 func = next(self._handlers_iterator(alias=func))
             except StopIteration:
@@ -73,10 +75,23 @@ class TransactionContext:
         result = wrapped_handler()
         return result
 
-    def emit(self, event: str, *args, **kwargs) -> dict[callable, Any]:
+    def execute(self, task: Task) -> Any:
+        try:
+            func = next(self._handlers_iterator(alias=type(task)))
+        except StopIteration:
+            raise ValueError(f"Handler not found", func)
+        return self.call(func, task)
+
+    def emit(self, event: str | Event, *args, **kwargs) -> dict[callable, Any]:
         """Emit an event and call all event handlers immediately"""
+        if isinstance(event, Event):
+            alias = type(event)
+            args = (event, *args)
+        else:
+            alias = event
+
         all_results = OrderedDict()
-        for handler in self._handlers_iterator(alias=event):
+        for handler in self._handlers_iterator(alias):
             result = self.call(handler, *args, **kwargs)
             all_results[handler] = result
         return all_results

@@ -1,17 +1,19 @@
 from uuid import uuid4
 
-from lato import Application, TransactionContext
+from lato import Application, Event, Task, TransactionContext
+
+
+class UserService:
+    def create_user(self, email, password):
+        ...
+
+
+class EmailService:
+    def send_welcome_email(self, email):
+        ...
 
 
 def test_application_example_from_readme():
-    class UserService:
-        def create_user(self, email, password):
-            ...
-
-    class EmailService:
-        def send_welcome_email(self, email):
-            ...
-
     app = Application(
         name="Hello World",
         # dependencies
@@ -36,3 +38,28 @@ def test_application_example_from_readme():
         result = ctx.call(create_user_use_case, "alice@example.com", "password")
 
     assert True
+
+
+def test_handling_tasks_and_events():
+    app = Application(
+        user_service=UserService(),
+        email_service=EmailService(),
+    )
+
+    class CreateUser(Task):
+        email: str
+        password: str
+
+    class UserCreated(Event):
+        email: str
+
+    @app.handler(CreateUser)
+    def handle_create_user(task: CreateUser, user_service: UserService):
+        user_service.create_user(task.email, task.password)
+
+    @app.on(UserCreated)
+    def on_user_created(event: UserCreated, email_service: EmailService):
+        email_service.send_welcome_email(event.email)
+
+    task = CreateUser(email="alice@example.com", password="password")
+    app.execute(task)

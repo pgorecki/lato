@@ -2,6 +2,8 @@ import pytest
 from application import Application
 from transaction_context import TransactionContext
 
+from lato.message import Event, Task
+
 
 class FooService:
     ...
@@ -164,3 +166,31 @@ def test_emitting_and_handling_events_uses_middleware():
         ctx.call(sample_use_case)
 
     assert ctx[Counter].value == 2
+
+
+def test_app_executes_task():
+    app = Application()
+
+    class MyTask(Task):
+        message: str
+
+    @app.handler(MyTask)
+    def handle_my_task(task: MyTask):
+        return f"processed {task.message}"
+
+    task = MyTask(message="foo")
+    assert app.execute(task) == "processed foo"
+
+
+def test_app_handles_external_event():
+    app = Application()
+
+    class MyEvent(Event):
+        message: str
+
+    @app.on(MyEvent)
+    def handle_my_event(event: MyEvent):
+        return f"handled {task.message}"
+
+    task = MyEvent(message="foo")
+    assert app.emit(task) == {handle_my_event: "handled foo"}

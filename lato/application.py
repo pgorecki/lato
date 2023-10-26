@@ -2,6 +2,7 @@ from typing import Any, Callable
 
 from lato.application_module import ApplicationModule
 from lato.dependency_provider import DependencyProvider
+from lato.message import Event, Task
 from lato.transaction_context import TransactionContext
 
 
@@ -27,6 +28,16 @@ class Application(ApplicationModule):
     def call(self, func: Callable | str, *args, **kwargs):
         with self.transaction_context() as ctx:
             result = ctx.call(func, *args, **kwargs)
+        return result
+
+    def execute(self, task: Task) -> Any:
+        with self.transaction_context() as ctx:
+            result = ctx.execute(task)
+        return result
+
+    def emit(self, event: Event) -> dict[callable, Any]:
+        with self.transaction_context() as ctx:
+            result = ctx.emit(event)
         return result
 
     def on_enter_transaction_context(self, func):
