@@ -76,6 +76,10 @@ class DependencyProvider:
         :param identifier: The name or type to be used as an identifier for the dependency
         :param dependency: The actual dependency
         """
+        if isinstance(identifier, type):
+            for c in inspect.getmro(identifier):
+                self._dependencies[c] = dependency
+
         self._dependencies[identifier] = dependency
 
     def has_dependency(self, identifier: str | type) -> bool:

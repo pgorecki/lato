@@ -16,6 +16,7 @@ class TransactionContext:
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
+        self.current_action = None
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
         self._middlewares = []
@@ -80,6 +81,7 @@ class TransactionContext:
             func = next(self._handlers_iterator(alias=type(task)))
         except StopIteration:
             raise ValueError(f"Handler not found", func)
+        self.current_action = (task, func)
         return self.call(func, task)
 
     def emit(self, event: str | Event, *args, **kwargs) -> dict[callable, Any]:
@@ -92,6 +94,7 @@ class TransactionContext:
 
         all_results = OrderedDict()
         for handler in self._handlers_iterator(alias):
+            self.current_action = (event, handler)
             result = self.call(handler, *args, **kwargs)
             all_results[handler] = result
         return all_results
@@ -99,6 +102,10 @@ class TransactionContext:
     def get_dependency(self, identifier: Any) -> Any:
         """Get a dependency from the dependency provider"""
         return self.dependency_provider.get_dependency(identifier)
+
+    def set_dependency(self, identifier: Any, dependency: Any) -> None:
+        """Set a dependency in the dependency provider"""
+        self.dependency_provider.set_dependency(identifier, dependency)
 
     def __getitem__(self, item) -> Any:
         return self.get_dependency(item)
