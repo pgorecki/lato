@@ -2,17 +2,18 @@ from collections import OrderedDict
 from functools import partial
 from typing import Any
 
-from dependency_provider import DependencyProvider
-
+from lato.dependency_provider import SimpleDependencyProvider, as_type
 from lato.message import Event, Task
 
 
 class TransactionContext:
     """A context spanning a single transaction for execution of a function"""
 
-    dependency_provider_factory = DependencyProvider
+    dependency_provider_factory = SimpleDependencyProvider
 
-    def __init__(self, dependency_provider: DependencyProvider = None, *args, **kwargs):
+    def __init__(
+        self, dependency_provider: SimpleDependencyProvider = None, *args, **kwargs
+    ):
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
@@ -69,8 +70,11 @@ class TransactionContext:
             except StopIteration:
                 raise ValueError(f"Handler not found", func)
 
-        dp = self.dependency_provider.copy(ctx=self)
-        resolved_kwargs = dp.resolve_func_params(func, func_args, func_kwargs)
+        self.dependency_provider.update(ctx=as_type(self, TransactionContext))
+
+        resolved_kwargs = self.dependency_provider.resolve_func_params(
+            func, func_args, func_kwargs
+        )
         p = partial(func, **resolved_kwargs)
         wrapped_handler = self._wrap_with_middlewares(p)
         result = wrapped_handler()

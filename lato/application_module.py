@@ -1,8 +1,7 @@
 from collections import defaultdict
 
-from utils import OrderedSet
-
 from lato.message import Event, Task
+from lato.utils import OrderedSet
 
 
 class ApplicationModule:

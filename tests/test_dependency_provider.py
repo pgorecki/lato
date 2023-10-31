@@ -1,4 +1,10 @@
-from dependency_provider import DependencyProvider, get_function_parameters
+import abc
+
+from lato.dependency_provider import (
+    SimpleDependencyProvider,
+    as_type,
+    get_function_parameters,
+)
 
 
 class FooService:
@@ -11,25 +17,25 @@ def foo(a: int, b: str, c: FooService):
 
 def test_create_provider_with_types():
     foo_service = FooService()
-    dp = DependencyProvider(foo_service=foo_service)
+    dp = SimpleDependencyProvider(foo_service=foo_service)
     assert dp[FooService] is foo_service
     assert dp["foo_service"] is foo_service
 
 
 def test_create_provider_with_primitive_kwarg():
-    dp = DependencyProvider(x=1)
+    dp = SimpleDependencyProvider(x=1)
     assert dp["x"] == 1
 
 
 def test_create_provider_with_class_instance_arg():
     service = FooService()
-    dp = DependencyProvider(service)
+    dp = SimpleDependencyProvider(service)
     assert dp[FooService] is service
 
 
 def test_create_provider_with_class_instance_karg():
     service = FooService()
-    dp = DependencyProvider(service=service)
+    dp = SimpleDependencyProvider(service=service)
     assert dp[FooService] is service
     assert dp["service"] is service
 
@@ -37,7 +43,7 @@ def test_create_provider_with_class_instance_karg():
 def test_create_provider_with_class_instance_arg_and_kwarg_gets_overridden():
     service1 = FooService()
     service2 = FooService()
-    dp = DependencyProvider(service1, service=service2)
+    dp = SimpleDependencyProvider(service1, service=service2)
     assert dp[FooService] is service2
     assert dp["service"] is service2
 
@@ -47,7 +53,7 @@ def test_resolve_custom_primitive_type():
         ...
 
     email = Email("john@example.com")
-    dp = DependencyProvider(email=email)
+    dp = SimpleDependencyProvider(email=email)
     assert dp[Email] == email
 
 
@@ -59,12 +65,12 @@ def test_get_function_parameters():
 
 
 def test_resolve_params_when_empty():
-    dp = DependencyProvider()
+    dp = SimpleDependencyProvider()
     assert dp.resolve_func_params(foo) == {}
 
 
 def test_resolve_params_by_name():
-    dp = DependencyProvider(a=1, b="2")
+    dp = SimpleDependencyProvider(a=1, b="2")
     assert dp.resolve_func_params(foo) == {
         "a": 1,
         "b": "2",
@@ -72,14 +78,14 @@ def test_resolve_params_by_name():
 
 
 def test_resolve_params_with_func_args():
-    dp = DependencyProvider()
+    dp = SimpleDependencyProvider()
     assert dp.resolve_func_params(foo, func_args=(10,)) == {
         "a": 10,
     }
 
 
 def test_resolve_params_with_func_kargs():
-    dp = DependencyProvider()
+    dp = SimpleDependencyProvider()
     assert dp.resolve_func_params(foo, func_kwargs=dict(a=10)) == {
         "a": 10,
     }
@@ -87,7 +93,7 @@ def test_resolve_params_with_func_kargs():
 
 def test_resolve_arguments_by_type():
     service = FooService()
-    dp = DependencyProvider(service)
+    dp = SimpleDependencyProvider(service)
     assert dp.resolve_func_params(foo) == {
         "c": service,
     }
@@ -97,5 +103,38 @@ def test_resolve_arguments_of_function_without_type_hints():
     def bar(a):
         ...
 
-    dp = DependencyProvider(a=1)
+    dp = SimpleDependencyProvider(a=1)
     assert dp.resolve_func_params(bar) == dict(a=1)
+
+
+def test_update_arg_dependency_as_type():
+    dp = SimpleDependencyProvider()
+
+    class FooService(abc.ABC):
+        ...
+
+    class FooServiceImpl(FooService):
+        ...
+
+    service = FooServiceImpl()
+
+    dp.update(as_type(service, FooService))
+
+    assert dp[FooService] is service
+
+
+def test_update_kwarg_dependency_as_type():
+    dp = SimpleDependencyProvider()
+
+    class FooService(abc.ABC):
+        ...
+
+    class FooServiceImpl(FooService):
+        ...
+
+    service = FooServiceImpl()
+
+    dp.update(service=as_type(service, FooService))
+
+    assert dp[FooService] is service
+    assert dp["service"] is service

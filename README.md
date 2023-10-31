@@ -277,7 +277,9 @@ whenever a transaction context is created or destroyed. The transaction context 
 to execute a task or handle an event, and also to create any transaction level dependencies. In this example, we
 use the `on_enter_transaction_context` hook to update the transaction context with a logger and a transaction id,
 but in a real application you would probably want to use the hooks to begin a database transaction and commit/rollback 
-any changes.
+any changes. If you need to get a dependency from the transaction context, you can use the `ctx[identifier]` syntax, 
+where `identifier` is the name (i.e. `logger`) or type (i.e. `logging.Logger`) of the dependency.
+
 
 There is also a `logging_middleware` which is used to log the execution of any tasks and events. This middleware is
 automatically called whenever a task or event is executed, and there may be multiple middlewares chained together.
@@ -286,46 +288,27 @@ Finally, we have the `app.execute` calls which are used to execute tasks and eve
 automatically creates a transaction context and calls the `call` method of the transaction context. The `call` method
 is responsible for executing the task or event, and it will automatically inject any dependencies that are required.
 
-In addition, you can use `app.emit` to emit any external event, i.e. from a webhooks or a message queue. 
+In addition, you can use `app.emit` to emit any external event, i.e. from a webhooks or a message queue.
 
-If executed, the application will produce the following log:
+## Examples
 
+Check out the [examples](https://github.com/pgorecki/lato/tree/main/examples) and 
+[tests](https://github.com/pgorecki/lato/tree/main/tests) for more examples.
+
+## Docs
+
+Coming soon...
+
+## Testing
+
+Run the tests using pytest:
+
+```bash
+pytest tests
 ```
-transaction-7d913a29-e3ca-4046-82bd-3bf48e448d29 - DEBUG - <<< Begin transaction
-transaction-7d913a29-e3ca-4046-82bd-3bf48e448d29 - DEBUG - Executing <function add_candidate at 0x7f68dc206dd0> -> AddCandidate(task_id=UUID('993c5675-da59-4b83-a948-486cef1a9509'), candidate_id='1', candidate_name='Alice')...
-transaction-7d913a29-e3ca-4046-82bd-3bf48e448d29 - INFO - Adding candidate Alice with id 1
-transaction-7d913a29-e3ca-4046-82bd-3bf48e448d29 - DEBUG - Finished executing <function add_candidate at 0x7f68dc206dd0> -> AddCandidate(task_id=UUID('993c5675-da59-4b83-a948-486cef1a9509'), candidate_id='1', candidate_name='Alice')
-transaction-7d913a29-e3ca-4046-82bd-3bf48e448d29 - DEBUG - >>> End transaction
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - DEBUG - <<< Begin transaction
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - DEBUG - Executing <function hire_candidate at 0x7f68dc1cd480> -> HireCandidate(task_id=UUID('9a019495-637e-4aa1-a6ed-77294403e05d'), candidate_id='1')...
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - INFO - Hiring candidate 1
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - DEBUG - Executing <function on_candidate_hired at 0x7f68dc1cd5a0> -> CandidateHired(event_id=UUID('9dfc45d3-86c1-4405-aef0-3367272d23d8'), candidate_id='1')...
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - INFO - ** Sending onboarding email to 1
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - DEBUG - Finished executing <function on_candidate_hired at 0x7f68dc1cd5a0> -> CandidateHired(event_id=UUID('9dfc45d3-86c1-4405-aef0-3367272d23d8'), candidate_id='1')
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - DEBUG - Finished executing <function hire_candidate at 0x7f68dc1cd480> -> HireCandidate(task_id=UUID('9a019495-637e-4aa1-a6ed-77294403e05d'), candidate_id='1')
-transaction-b4554a80-b86d-40be-9b96-c395a2dd46d0 - DEBUG - >>> End transaction
-transaction-2420052e-354a-42cf-a9db-9654e1aaaf28 - DEBUG - <<< Begin transaction
-transaction-2420052e-354a-42cf-a9db-9654e1aaaf28 - DEBUG - Executing <function create_project at 0x7f68dc1cd7e0> -> CreateProject(task_id=UUID('eb2aa32a-c5d7-429e-a26e-f4ac7e430149'), project_id='1', project_name='Project 1')...
-transaction-2420052e-354a-42cf-a9db-9654e1aaaf28 - INFO - Creating project Project 1 with id 1
-transaction-2420052e-354a-42cf-a9db-9654e1aaaf28 - DEBUG - Finished executing <function create_project at 0x7f68dc1cd7e0> -> CreateProject(task_id=UUID('eb2aa32a-c5d7-429e-a26e-f4ac7e430149'), project_id='1', project_name='Project 1')
-transaction-2420052e-354a-42cf-a9db-9654e1aaaf28 - DEBUG - >>> End transaction
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - DEBUG - <<< Begin transaction
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - DEBUG - Executing <function assign_employee_to_project at 0x7f68dc1cd870> -> AssignEmployeeToProject(task_id=UUID('a2f9d016-d5a4-4d70-8642-f4906d371ab5'), employee_id='1', project_id='1')...
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - INFO - Assigning employee 1 to project 1
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - DEBUG - Executing <function on_employee_assigned_to_project at 0x7f68dc1cd900> -> EmployeeAssignedToProject(event_id=UUID('30d625c7-c5d6-425e-8592-093ef5e3f39a'), employee_id='1', project_id='1')...
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - INFO - Sending 'Welcome to project 1' email to employee 1
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - DEBUG - Finished executing <function on_employee_assigned_to_project at 0x7f68dc1cd900> -> EmployeeAssignedToProject(event_id=UUID('30d625c7-c5d6-425e-8592-093ef5e3f39a'), employee_id='1', project_id='1')
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - DEBUG - Finished executing <function assign_employee_to_project at 0x7f68dc1cd870> -> AssignEmployeeToProject(task_id=UUID('a2f9d016-d5a4-4d70-8642-f4906d371ab5'), employee_id='1', project_id='1')
-transaction-d3fc6fa7-1b3c-4872-bee2-ca597688e919 - DEBUG - >>> End transaction
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - <<< Begin transaction
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - Executing <function fire_employee at 0x7f68dc1cd510> -> FireEmployee(task_id=UUID('72d48e38-57ca-4233-a987-088f484b7fe0'), employee_id='1')...
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - INFO - Firing employee 1
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - Executing <function on_employee_fired at 0x7f68dc1cd750> -> EmployeeFired(event_id=UUID('73ef555b-3356-40d3-bb6b-168203c311ee'), employee_id='1')...
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - INFO - Checking if employee 1 is assigned to a project
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - Finished executing <function on_employee_fired at 0x7f68dc1cd750> -> EmployeeFired(event_id=UUID('73ef555b-3356-40d3-bb6b-168203c311ee'), employee_id='1')
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - Executing <function on_employee_fired at 0x7f68dc1cd630> -> EmployeeFired(event_id=UUID('73ef555b-3356-40d3-bb6b-168203c311ee'), employee_id='1')...
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - INFO - ** Sending exit email to 1
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - Finished executing <function on_employee_fired at 0x7f68dc1cd630> -> EmployeeFired(event_id=UUID('73ef555b-3356-40d3-bb6b-168203c311ee'), employee_id='1')
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - Finished executing <function fire_employee at 0x7f68dc1cd510> -> FireEmployee(task_id=UUID('72d48e38-57ca-4233-a987-088f484b7fe0'), employee_id='1')
-transaction-35530dda-b233-4b0d-a061-5c69f6173451 - DEBUG - >>> End transaction
-```
+
+
+
+## What lato actually means?
+
+*Lato* is the Polish word for *"summer"*. And we all know that summer is more fun than spring ;)

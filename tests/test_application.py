@@ -1,8 +1,6 @@
 import pytest
-from application import Application
-from transaction_context import TransactionContext
 
-from lato.message import Event, Task
+from lato import Application, Event, Task, TransactionContext
 
 
 class FooService:

@@ -1,19 +1,20 @@
 from typing import Any, Callable
 
 from lato.application_module import ApplicationModule
-from lato.dependency_provider import DependencyProvider
+from lato.dependency_provider import SimpleDependencyProvider
 from lato.message import Event, Task
 from lato.transaction_context import TransactionContext
 
 
 class Application(ApplicationModule):
-    dependency_provider_class = DependencyProvider
+    dependency_provider_class = SimpleDependencyProvider
 
     def __init__(self, name=__name__, dependency_provider=None, **kwargs):
         super().__init__(name)
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_class(**kwargs)
         )
+        self._transaction_context_factory = None
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
         self._transaction_middlewares = []
@@ -60,6 +61,16 @@ class Application(ApplicationModule):
         self._on_exit_transaction_context = func
         return func
 
+    def on_create_transaction_context(self, func):
+        """
+        Decorator for overrinding default transaction context creation
+
+        :param func:
+        :return:
+        """
+        self._transaction_context_factory = func
+        return func
+
     def transaction_middleware(self, middleware_func):
         """
         Decorator for registering a middleware function to be called when executing a function in a transaction context
@@ -76,8 +87,12 @@ class Application(ApplicationModule):
         :param dependencies:
         :return:
         """
-        dp = self.dependency_provider.copy(**dependencies)
-        ctx = TransactionContext(dependency_provider=dp)
+        if self._transaction_context_factory:
+            ctx = self._transaction_context_factory(**dependencies)
+        else:
+            dp = self.dependency_provider.copy(**dependencies)
+            ctx = TransactionContext(dependency_provider=dp)
+
         ctx.configure(
             on_enter_transaction_context=self._on_enter_transaction_context,
             on_exit_transaction_context=self._on_exit_transaction_context,
