@@ -2,7 +2,11 @@ from collections import OrderedDict
 from functools import partial
 from typing import Any
 
-from lato.dependency_provider import SimpleDependencyProvider, as_type
+from lato.dependency_provider import (
+    DependencyProvider,
+    SimpleDependencyProvider,
+    as_type,
+)
 from lato.message import Event, Task
 
 
@@ -11,9 +15,7 @@ class TransactionContext:
 
     dependency_provider_factory = SimpleDependencyProvider
 
-    def __init__(
-        self, dependency_provider: SimpleDependencyProvider = None, *args, **kwargs
-    ):
+    def __init__(self, dependency_provider: DependencyProvider = None, *args, **kwargs):
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
