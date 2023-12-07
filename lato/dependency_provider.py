@@ -1,5 +1,6 @@
 import inspect
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import Any
 
 from lato.utils import OrderedDict
@@ -150,9 +151,9 @@ class DependencyProvider(ABC):
 
     def resolve_func_params(
         self,
-        func: callable,
-        func_args: list[Any] = None,
-        func_kwargs: dict[str, Any] = None,
+        func: Callable,
+        func_args: Any = None,
+        func_kwargs: Any = None,
     ) -> dict[str, Any]:
         """
         Resolve function parameters by providing necessary kwargs to call the function.

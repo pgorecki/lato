@@ -1,4 +1,7 @@
+import pytest
+
 from lato.dependency_provider import SimpleDependencyProvider
+from lato.message import Task
 from lato.transaction_context import TransactionContext
 
 
@@ -37,3 +40,10 @@ def test_call_with_kwarg_and_dependency():
     dp = SimpleDependencyProvider(a=10, b=20)
     ctx = TransactionContext(dp)
     assert ctx.call(add, b=2) == 12
+
+
+def test_call_without_handlers():
+    ctx = TransactionContext()
+    task = Task()
+    with pytest.raises(ValueError):
+        ctx.execute(task)

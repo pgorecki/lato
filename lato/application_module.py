@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Callable
 
 from lato.message import Event, Task
 from lato.utils import OrderedSet
@@ -7,10 +8,10 @@ from lato.utils import OrderedSet
 class ApplicationModule:
     def __init__(self, name: str):
         self.name: str = name
-        self._handlers: dict[str, set[callable]] = defaultdict(OrderedSet)
+        self._handlers: defaultdict[str, OrderedSet[Callable]] = defaultdict(OrderedSet)
         self._submodules: OrderedSet[ApplicationModule] = OrderedSet()
 
-    def include_submodule(self, a_module):
+    def include_submodule(self, a_module: "ApplicationModule"):
         assert isinstance(
             a_module, ApplicationModule
         ), f"Can only include {ApplicationModule} instances, got {a_module}"
@@ -18,7 +19,7 @@ class ApplicationModule:
 
     def handler(self, alias):
         """
-        Decorator for registering use cases by name
+        Decorator for registering tasks
         """
         try:
             is_task_or_event = issubclass(alias, (Task, Event))
@@ -58,12 +59,6 @@ class ApplicationModule:
     def on(self, event_name):
         # TODO: add matcher parameter
         def decorator(func):
-            """
-            Decorator for registering an event handler
-
-            :param event_handler:
-            :return:
-            """
             self._handlers[event_name].add(func)
             return func
 

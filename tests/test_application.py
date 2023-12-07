@@ -177,7 +177,7 @@ def test_app_executes_task():
         return f"processed {task.message}"
 
     task = MyTask(message="foo")
-    assert app.execute(task) == "processed foo"
+    assert app.execute(task) == ("processed foo",)
 
 
 def test_app_handles_external_event():

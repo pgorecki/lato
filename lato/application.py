@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from lato.application_module import ApplicationModule
 from lato.dependency_provider import SimpleDependencyProvider
@@ -27,16 +28,25 @@ class Application(ApplicationModule):
         return self.get_dependency(item)
 
     def call(self, func: Callable | str, *args, **kwargs):
+        if isinstance(func, str):
+            try:
+                func = next(self.iterate_handlers_for(alias=func))
+            except StopIteration:
+                raise ValueError(f"Handler not found", func)
+
         with self.transaction_context() as ctx:
             result = ctx.call(func, *args, **kwargs)
         return result
 
-    def execute(self, task: Task) -> Any:
+    def execute(self, task: Task) -> tuple[Any, ...]:
         with self.transaction_context() as ctx:
-            result = ctx.execute(task)
-        return result
+            return ctx.execute(task)
 
-    def emit(self, event: Event) -> dict[callable, Any]:
+    def query(self, task: Task) -> Any:
+        with self.transaction_context() as ctx:
+            return ctx.query(task)
+
+    def emit(self, event: Event) -> dict[Callable, Any]:
         with self.transaction_context() as ctx:
             result = ctx.emit(event)
         return result

@@ -1,13 +1,16 @@
 from collections import OrderedDict
+from collections.abc import Callable, Iterator
 from functools import partial
-from typing import Any
+from typing import Any, NewType
 
 from lato.dependency_provider import (
     DependencyProvider,
     SimpleDependencyProvider,
     as_type,
 )
-from lato.message import Event, Task
+from lato.message import Message, Task
+
+Alias = NewType("Alias", Any)
 
 
 class TransactionContext:
@@ -15,15 +18,17 @@ class TransactionContext:
 
     dependency_provider_factory = SimpleDependencyProvider
 
-    def __init__(self, dependency_provider: DependencyProvider = None, *args, **kwargs):
+    def __init__(
+        self, dependency_provider: DependencyProvider | None = None, *args, **kwargs
+    ):
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
-        self.current_action = None
+        self.current_action: tuple[str | Message, Any] | None = None
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
-        self._middlewares = []
-        self._handlers_iterator = lambda alias: iter([])
+        self._middlewares: list[Callable] = []
+        self._handlers_iterator: Iterator = lambda alias: iter([])
 
     def configure(
         self,
@@ -65,13 +70,11 @@ class TransactionContext:
             p = partial(middleware, self, p)
         return p
 
-    def call(self, func, *func_args, **func_kwargs) -> Any:
-        if isinstance(func, str):
-            try:
-                func = next(self._handlers_iterator(alias=func))
-            except StopIteration:
-                raise ValueError(f"Handler not found", func)
-
+    def call(self, func: Callable, *func_args: Any, **func_kwargs: Any) -> Any:
+        """
+        Call a function with the given arguments and keyword arguments.
+        Any dependencies will be resolved from the dependency provider.
+        """
         self.dependency_provider.update(ctx=as_type(self, TransactionContext))
 
         resolved_kwargs = self.dependency_provider.resolve_func_params(
@@ -82,25 +85,24 @@ class TransactionContext:
         result = wrapped_handler()
         return result
 
-    def execute(self, task: Task) -> Any:
-        try:
-            func = next(self._handlers_iterator(alias=type(task)))
-        except StopIteration:
-            raise ValueError(f"Handler not found", func)
-        self.current_action = (task, func)
-        return self.call(func, task)
+    def execute(self, task: Task) -> tuple[Any, ...]:
+        results = self.emit(task)
+        values = tuple(results.values())
+        if len(values) == 0:
+            raise ValueError("No handlers found for task", task)
+        return values
 
-    def emit(self, event: str | Event, *args, **kwargs) -> dict[callable, Any]:
-        """Emit an event and call all event handlers immediately"""
-        if isinstance(event, Event):
-            alias = type(event)
-            args = (event, *args)
-        else:
-            alias = event
+    def emit(self, message: str | Message, *args, **kwargs) -> dict[Callable, Any]:
+        """Emit a message by calling all handlers for that message"""
+        alias = type(message) if isinstance(message, Message) else message
+
+        if isinstance(message, Message):
+            args = (message, *args)
 
         all_results = OrderedDict()
         for handler in self._handlers_iterator(alias):
-            self.current_action = (event, handler)
+            # FIXME: push and pop current action instead of setting it
+            self.current_action = (message, handler)
             result = self.call(handler, *args, **kwargs)
             all_results[handler] = result
         return all_results
@@ -111,7 +113,7 @@ class TransactionContext:
 
     def set_dependency(self, identifier: Any, dependency: Any) -> None:
         """Set a dependency in the dependency provider"""
-        self.dependency_provider.set_dependency(identifier, dependency)
+        self.dependency_provider.register_dependency(identifier, dependency)
 
     def __getitem__(self, item) -> Any:
         return self.get_dependency(item)
