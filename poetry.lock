@@ -136,11 +136,11 @@ python-versions = "*"
 
 [[package]]
 name = "docutils"
-version = "0.20.1"
+version = "0.18.1"
 description = "Docutils -- Python Documentation Utilities"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "exceptiongroup"
@@ -361,6 +361,32 @@ description = "More routines for operating on iterables, beyond itertools"
 category = "dev"
 optional = false
 python-versions = ">=3.8"
+
+[[package]]
+name = "mypy"
+version = "1.6.1"
+description = "Optional static typing for Python"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+mypy-extensions = ">=1.0.0"
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
+typing-extensions = ">=4.1.0"
+
+[package.extras]
+dmypy = ["psutil (>=4.0)"]
+install-types = ["pip"]
+reports = ["lxml"]
+
+[[package]]
+name = "mypy-extensions"
+version = "1.0.0"
+description = "Type system extensions for programs checked with the mypy type checker."
+category = "dev"
+optional = false
+python-versions = ">=3.5"
 
 [[package]]
 name = "myst-parser"
@@ -698,6 +724,22 @@ sphinx = "*"
 test = ["pytest", "pytest-cov"]
 
 [[package]]
+name = "sphinx-rtd-theme"
+version = "1.3.0"
+description = "Read the Docs theme for Sphinx"
+category = "dev"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
+
+[package.dependencies]
+docutils = "<0.19"
+sphinx = ">=1.6,<8"
+sphinxcontrib-jquery = ">=4,<5"
+
+[package.extras]
+dev = ["transifex-client", "sphinxcontrib-httpdomain", "bump2version", "wheel"]
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "1.0.7"
 description = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
@@ -741,6 +783,17 @@ Sphinx = ">=5"
 [package.extras]
 lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest", "html5lib"]
+
+[[package]]
+name = "sphinxcontrib-jquery"
+version = "4.1"
+description = "Extension to include jQuery on newer Sphinx releases"
+category = "dev"
+optional = false
+python-versions = ">=2.7"
+
+[package.dependencies]
+Sphinx = ">=1.8"
 
 [[package]]
 name = "sphinxcontrib-jsmath"
@@ -872,7 +925,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-ena
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "c399d0eec4f5223648bce83e38484197fedd124bdb0b5b4a580acca89e89a41c"
+content-hash = "5bc656d2329160fe7b6fb9d25a9ada3edc491c02e2aa4509f46ead0d75cb8104"
 
 [metadata.files]
 alabaster = []
@@ -906,6 +959,8 @@ markupsafe = []
 mdit-py-plugins = []
 mdurl = []
 more-itertools = []
+mypy = []
+mypy-extensions = []
 myst-parser = []
 nh3 = []
 nodeenv = []
@@ -938,9 +993,11 @@ six = [
 snowballstemmer = []
 sphinx = []
 sphinx-autobuild = []
+sphinx-rtd-theme = []
 sphinxcontrib-applehelp = []
 sphinxcontrib-devhelp = []
 sphinxcontrib-htmlhelp = []
+sphinxcontrib-jquery = []
 sphinxcontrib-jsmath = []
 sphinxcontrib-qthelp = []
 sphinxcontrib-serializinghtml = []
