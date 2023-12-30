@@ -1,7 +1,11 @@
 from collections.abc import Callable
-from functools import reduce
+from functools import partial, reduce
 from operator import add, or_
 from typing import Any, Optional
+
+from mergedeep import Strategy, merge
+
+additive_merge = partial(merge, strategy=Strategy.TYPESAFE_ADDITIVE)
 
 
 def compose(values: tuple[Any, ...], operator: Optional[Callable] = None):
@@ -12,11 +16,11 @@ def compose(values: tuple[Any, ...], operator: Optional[Callable] = None):
     if operator is not None:
         operators = [operator]
     else:
-        operators = [or_, add]
+        operators = [additive_merge, or_, add]
 
     for op in operators:
         try:
             return reduce(op, values)
         except TypeError:
             pass
-    raise TypeError("Could not compose, tried", operators)
+    raise TypeError("Could not compose", values)

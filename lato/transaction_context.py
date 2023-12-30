@@ -24,6 +24,7 @@ class TransactionContext:
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
+        self.resolved_kwargs: dict[str, Any] = {}
         self.current_action: tuple[str | Message, Any] | None = None
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
@@ -80,6 +81,7 @@ class TransactionContext:
         resolved_kwargs = self.dependency_provider.resolve_func_params(
             func, func_args, func_kwargs
         )
+        self.resolved_kwargs.update(resolved_kwargs)
         p = partial(func, **resolved_kwargs)
         wrapped_handler = self._wrap_with_middlewares(p)
         result = wrapped_handler()
