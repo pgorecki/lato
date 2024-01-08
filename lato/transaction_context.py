@@ -12,6 +12,9 @@ from lato.message import Message, Task
 
 Alias = NewType("Alias", Any)
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class TransactionContext:
     """A context spanning a single transaction for execution of a function"""
@@ -38,6 +41,14 @@ class TransactionContext:
         middlewares=None,
         handlers_iterator=None,
     ):
+        """
+        Configure the transaction context with specified handlers and middlewares.
+
+        :param on_enter_transaction_context: Optional; Function to be called when entering a transaction context.
+        :param on_exit_transaction_context: Optional; Function to be called when exiting a transaction context.
+        :param middlewares: Optional; List of middleware functions to be applied.
+        :param handlers_iterator: Optional; Function to iterate over handlers.
+        """
         if on_enter_transaction_context:
             self._on_enter_transaction_context = on_enter_transaction_context
         if on_exit_transaction_context:
@@ -48,12 +59,27 @@ class TransactionContext:
             self._handlers_iterator = handlers_iterator
 
     def begin(self):
+        """
+        Should be used to start a transaction.
+        Initializes the transaction context.
+        """
+        log.debug("Beginning transaction")
         """Should be used to start a transaction"""
         self._on_enter_transaction_context(self)
 
     def end(self, exception=None):
-        """Should be used to commit/end a transaction"""
+        """
+        Should be used to commit/end a transaction.
+        Calls on_exit_transaction_context callback, optionally passing an exception.
+
+        :param exception: Optional; The exception to handle at the end of the transaction, if any.
+        """
         self._on_exit_transaction_context(self, exception)
+        
+        if exception:
+            log.debug("Ended transaction with exception: {}".format(exception))
+        else:
+            log.debug("Ended transaction")
 
     def iterate_handlers_for(self, alias: str):
         yield from self._handlers_iterator(alias)
@@ -74,7 +100,11 @@ class TransactionContext:
     def call(self, func: Callable, *func_args: Any, **func_kwargs: Any) -> Any:
         """
         Call a function with the given arguments and keyword arguments.
-        Any dependencies will be resolved from the dependency provider.
+        Any missing arguments will be resolved from the dependency provider.
+        :param func: The function to call.
+        :param func_args: Positional arguments for the function.
+        :param func_kwargs: Keyword arguments for the function.
+        :return: The result of the function call.
         """
         self.dependency_provider.update(ctx=as_type(self, TransactionContext))
 
@@ -95,7 +125,14 @@ class TransactionContext:
         return values
 
     def emit(self, message: str | Message, *args, **kwargs) -> dict[Callable, Any]:
-        """Emit a message by calling all handlers for that message"""
+        """
+        Emit a message by calling all handlers for that message.
+
+        :param message: The message to emit.
+        :param args: Positional arguments to pass to the handlers.
+        :param kwargs: Keyword arguments to pass to the handlers.
+        :return: A dictionary mapping handlers to their results.
+        """
         alias = type(message) if isinstance(message, Message) else message
 
         if isinstance(message, Message):

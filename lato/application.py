@@ -7,6 +7,9 @@ from lato.dependency_provider import SimpleDependencyProvider
 from lato.message import Event, Task
 from lato.transaction_context import TransactionContext
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class Application(ApplicationModule):
     dependency_provider_class = SimpleDependencyProvider
@@ -78,7 +81,7 @@ class Application(ApplicationModule):
 
     def on_create_transaction_context(self, func):
         """
-        Decorator for overrinding default transaction context creation
+        Decorator for overriding default transaction context creation
 
         :param func:
         :return:

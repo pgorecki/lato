@@ -4,6 +4,9 @@ from collections.abc import Callable
 from lato.message import Event, Task
 from lato.utils import OrderedSet
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class ApplicationModule:
     def __init__(self, name: str):
