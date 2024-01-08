@@ -1,4 +1,4 @@
-from lato import Application, TransactionContext
+from lato import Application, TransactionContext, Event
 from lato.dependency_provider import SimpleDependencyProvider
 
 

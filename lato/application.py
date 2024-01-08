@@ -2,9 +2,13 @@ from collections.abc import Callable
 from typing import Any
 
 from lato.application_module import ApplicationModule
+from lato.compositon import compose
 from lato.dependency_provider import SimpleDependencyProvider
 from lato.message import Event, Task
 from lato.transaction_context import TransactionContext
+
+import logging
+log = logging.getLogger(__name__)
 
 
 class Application(ApplicationModule):
@@ -19,6 +23,7 @@ class Application(ApplicationModule):
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
         self._transaction_middlewares = []
+        self._composers: dict[str | Task, Callable] = {}
 
     def get_dependency(self, identifier: Any) -> Any:
         """Get a dependency from the dependency provider"""
@@ -40,11 +45,14 @@ class Application(ApplicationModule):
 
     def execute(self, task: Task) -> tuple[Any, ...]:
         with self.transaction_context() as ctx:
-            return ctx.execute(task)
+            results = ctx.execute(task)
+            return results
 
     def query(self, task: Task) -> Any:
-        with self.transaction_context() as ctx:
-            return ctx.query(task)
+        results = self.execute(task)
+        alias = task.__class__
+        composer = self._composers.get(alias, compose)
+        return composer(results)
 
     def emit(self, event: Event) -> dict[Callable, Any]:
         with self.transaction_context() as ctx:
@@ -73,7 +81,7 @@ class Application(ApplicationModule):
 
     def on_create_transaction_context(self, func):
         """
-        Decorator for overrinding default transaction context creation
+        Decorator for overriding default transaction context creation
 
         :param func:
         :return:
@@ -89,6 +97,17 @@ class Application(ApplicationModule):
         """
         self._transaction_middlewares.insert(0, middleware_func)
         return middleware_func
+
+    def compose(self, alias):
+        """
+        Decorator for composing results of tasks
+        """
+
+        def decorator(func):
+            self._composers[alias] = func
+            return func
+
+        return decorator
 
     def transaction_context(self, **dependencies) -> TransactionContext:
         """

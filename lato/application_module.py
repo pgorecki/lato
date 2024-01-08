@@ -4,6 +4,9 @@ from collections.abc import Callable
 from lato.message import Event, Task
 from lato.utils import OrderedSet
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class ApplicationModule:
     def __init__(self, name: str):
@@ -38,7 +41,7 @@ class ApplicationModule:
         # @app.handle(MyTask)
         def decorator(func):
             """
-            Decorator for registering use cases by name
+            Decorator for registering tasks by name
             """
             assert len(self._handlers[alias]) == 0
             self._handlers[alias].add(func)
@@ -55,6 +58,9 @@ class ApplicationModule:
                 yield from submodule.iterate_handlers_for(alias)
             except KeyError:
                 pass
+
+    def get_handlers_for(self, alias: str):
+        return list(self.iterate_handlers_for(alias))
 
     def on(self, event_name):
         # TODO: add matcher parameter
