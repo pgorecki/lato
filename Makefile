@@ -6,6 +6,9 @@ docs_autobuild:
 	
 docs_test:
 	sphinx-build docs docs/_build/html -b doctest
+	
+docs_pre_publish:
+	poetry export -f requirements.txt --output docs/requirements.txt
 
 publish:
 	python3 -m build
