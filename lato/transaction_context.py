@@ -1,18 +1,20 @@
+import logging
 from collections import OrderedDict
 from collections.abc import Callable, Iterator
 from functools import partial
-from typing import Any, NewType
+from typing import Any, NewType, Optional
 
 from lato.dependency_provider import (
     DependencyProvider,
     SimpleDependencyProvider,
     as_type,
 )
-from lato.message import Message, Task
+from lato.compositon import compose
+from lato.message import Message, Command
+
 
 Alias = NewType("Alias", Any)
 
-import logging
 log = logging.getLogger(__name__)
 
 
@@ -28,10 +30,11 @@ class TransactionContext:
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
         self.resolved_kwargs: dict[str, Any] = {}
-        self.current_action: tuple[str | Message, Any] | None = None
+        self.current_handler: Optional[Callable] = None
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
         self._middlewares: list[Callable] = []
+        self._composers: dict[str | Command, Callable] = {}
         self._handlers_iterator: Iterator = lambda alias: iter([])
 
     def configure(
@@ -39,6 +42,7 @@ class TransactionContext:
         on_enter_transaction_context=None,
         on_exit_transaction_context=None,
         middlewares=None,
+        composers=None,
         handlers_iterator=None,
     ):
         """
@@ -47,6 +51,7 @@ class TransactionContext:
         :param on_enter_transaction_context: Optional; Function to be called when entering a transaction context.
         :param on_exit_transaction_context: Optional; Function to be called when exiting a transaction context.
         :param middlewares: Optional; List of middleware functions to be applied.
+        :param composers: Optional; List of composers functions to be applied.
         :param handlers_iterator: Optional; Function to iterate over handlers.
         """
         if on_enter_transaction_context:
@@ -55,6 +60,8 @@ class TransactionContext:
             self._on_exit_transaction_context = on_exit_transaction_context
         if middlewares:
             self._middlewares = middlewares
+        if composers:
+            self._composers = composers
         if handlers_iterator:
             self._handlers_iterator = handlers_iterator
 
@@ -75,7 +82,7 @@ class TransactionContext:
         :param exception: Optional; The exception to handle at the end of the transaction, if any.
         """
         self._on_exit_transaction_context(self, exception)
-        
+
         if exception:
             log.debug("Ended transaction with exception: {}".format(exception))
         else:
@@ -117,18 +124,39 @@ class TransactionContext:
         result = wrapped_handler()
         return result
 
-    def execute(self, task: Task) -> tuple[Any, ...]:
-        results = self.emit(task)
+    def execute(self, command: Command) -> tuple[Any, ...]:
+        """
+        Executes a command and returns a tuple of handlers' return values.
+
+        Args:
+        - task (Task): The task to be executed.
+
+        Returns:
+        - tuple[Any, ...]: A tuple containing the return values of the executed handlers.
+
+        Raises:
+        - ValueError: If no handlers are found for the given task.
+        """
+        results = self.publish(command)
         values = tuple(results.values())
+
         if len(values) == 0:
-            raise ValueError("No handlers found for task", task)
-        return values
+            raise ValueError("No handlers found for task", values)
+
+        composed_result = self._compose_results(command, values)
+        return composed_result
+        
+
 
     def emit(self, message: str | Message, *args, **kwargs) -> dict[Callable, Any]:
-        """
-        Emit a message by calling all handlers for that message.
+        # TODO: mark as obsolete
+        return self.publish(message, *args, **kwargs)
 
-        :param message: The message to emit.
+    def publish(self, message: str | Message, *args, **kwargs) -> dict[Callable, Any]:
+        """
+        Publish a message by calling all handlers for that message.
+
+        :param message: The message object to publish, or a string.
         :param args: Positional arguments to pass to the handlers.
         :param kwargs: Keyword arguments to pass to the handlers.
         :return: A dictionary mapping handlers to their results.
@@ -140,8 +168,9 @@ class TransactionContext:
 
         all_results = OrderedDict()
         for handler in self._handlers_iterator(alias):
+            self.set_dependency('message', message)
             # FIXME: push and pop current action instead of setting it
-            self.current_action = (message, handler)
+            self.current_handler = handler
             result = self.call(handler, *args, **kwargs)
             all_results[handler] = result
         return all_results
@@ -153,6 +182,18 @@ class TransactionContext:
     def set_dependency(self, identifier: Any, dependency: Any) -> None:
         """Set a dependency in the dependency provider"""
         self.dependency_provider.register_dependency(identifier, dependency)
+        
+    def set_dependencies(self, **kwargs):
+        self.dependency_provider.update(**kwargs)
 
     def __getitem__(self, item) -> Any:
         return self.get_dependency(item)
+    
+    def _compose_results(self, command: Command, results: tuple[Any, ...]) -> Any:
+        alias = command.__class__ # TODO: expose alias as static field in Message class
+        composer = self._composers.get(alias, compose)
+        return composer(results)
+    
+    @property
+    def current_action(self):
+        return (self.get_dependency('message'), self.current_handler)

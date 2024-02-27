@@ -1,11 +1,12 @@
-import os
 import sys
+from os.path import dirname, realpath, sep, pardir
 
 import sphinx_rtd_theme
 
-sys.path.insert(0, os.path.abspath("../"))
+doc_root = dirname(__file__)
+tutorial_src_root = sep.join([doc_root, 'tutorial', 'src'])
 
-print(sys.path)
+sys.path.insert(0, doc_root)
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -38,3 +39,4 @@ pygments_style = "sphinx"
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_static_path = ["_static"]
+html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'] }

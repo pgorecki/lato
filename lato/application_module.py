@@ -1,10 +1,10 @@
+import logging
 from collections import defaultdict
 from collections.abc import Callable
 
-from lato.message import Event, Task
+from lato.message import Message
 from lato.utils import OrderedSet
 
-import logging
 log = logging.getLogger(__name__)
 
 
@@ -25,18 +25,19 @@ class ApplicationModule:
         Decorator for registering tasks
         """
         try:
-            is_task_or_event = issubclass(alias, (Task, Event))
+            is_message = issubclass(alias, Message)
         except TypeError:
-            is_task_or_event = False
+            is_message = False
 
-        if callable(alias) and not is_task_or_event:
-            # @app.handle(my_function)
+        if callable(alias) and not is_message:
+            # decorator was called without any argument
             func = alias
             alias = func.__name__
             assert len(self._handlers[alias]) == 0
             self._handlers[alias].add(func)
             return func
-
+        
+        # decorator was called with argument
         # @app.handle("my_function")
         # @app.handle(MyTask)
         def decorator(func):

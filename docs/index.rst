@@ -1,228 +1,153 @@
- .. lato documentation master file, created by
-   sphinx-quickstart on Fri Oct 27 18:16:19 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to lato's documentation!
-================================
-
+Welcome to lato documentation!
+==============================
 
 
 ..  toctree::
-    :maxdepth: 2
-    :caption: Contents:
-    
-    dependency_provider
+    :maxdepth: 3
+
+    tutorial/index
+    key_concepts/index
+    testing
+    api
 
 
-``lato`` is a microframework for building modular applications in Python. It helps you to build applications 
+**Lato** is a microframework for building modular applications in Python. It helps you to build applications 
 that are easy to maintain and extend. It is based on the idea of `modularity <https://en.wikipedia.org/wiki/Modular_programming>`_ 
 and `dependency injection <https://en.wikipedia.org/wiki/Dependency_injection>`_.
 
-If you are trying to build a modular monolith, ``lato`` is the right choice for you. It is framework agnostic,
+If you are trying to build a modular monolith, **Lato** is the right choice for you. It is framework agnostic,
 you can use it with any framework you want (`Flask`, `FastAPI`, ...).
+
+Features:
+
+- CQRS
+- dependency injection
 
 
 Installation
 ============
 
-``lato`` is available on `PyPI <https://pypi.org/project/lato/>`_ and can be installed with pip::
+**Lato** is available on `PyPI <https://pypi.org/project/lato/>`_ and can be installed with pip::
 
     pip install lato
 
-Basic Concepts
-==============
+Getting Started
+===============
 
-``TransactionContext`` is a core concept of ``lato``. It's main purpose is to inject dependencies into any function.
-When ``TransactionContext`` is calling a function using `call` method, it will inspect all its arguments and 
-it will try to inject its arguments (dependencies) into it. Any arguments passed to ``TransactionContext.call`` that 
-match to the function signature will be passed to the called function.
+The ``Application`` serves as a top-level building block in **Lato**. 
+Let's create a useless greeting application. During the construction of the application,
+we can pass as many dependencies as we need - and later on we will see how the dependencies are being used. 
+In this example we will need only one dependency: ``greeting_phrase``:
 
-::
 
-    from lato import TransactionContext 
-
-    def greet(name, greeting):
-        return f"{greeting}, {name}!"
-
-    ctx = TransactionContext()
-    result = ctx.call(greet, greeting="Hello", name="Alice")
+.. testcode::
     
-    assert result == "Hello, Alice!"
+    from lato import Application
 
-As you can see, ``greeting`` and ``name`` arguments in ``TransactionContext.call`` are actually passed to the ``greet`` function.
-You can use both keyword and positional arguments::
-    
-    ctx.call(greet, "Alice", "Hello")
-    ctx.call(greet, "Alice", greeting="Hello")
-    
-
-Instead of passing passing dependencies to ``TransactionContext.call``, it's often more convenient to pass them to ``TransactionContext`` 
-constructor::
-
-    from lato import TransactionContext 
-
-    def greet(name, greeting):
-        return f"{greeting}, {name}!"
-
-    ctx = TransactionContext(greeting="Hola")
-    print(ctx.call(greet, "Bob"))
-    print(ctx.call(greet, "Charlie"))
-
-.. note::
-    Any arguments passed to ``TransactionContext.call`` will override arguments passed to the constructor.
+    app = Application(name="Hello World", greeting_phrase="Hello")
 
 
-``TransactionContext`` is capable of injecting positional arguments, keyworded arguments, and typed arguments.
+Resolving parameters
+--------------------
 
-::
-
-    class FooService:
-        ...
-
-    def do_something(foo_service):
-        ...
-
-    def do_something_else(service: FooService):
-        ...
-
-    ctx = TransactionContext(foo_service=FooService())
-    ctx.call(do_something)
-    ctx.call(do_something_else)
-
-
-
-
-
-``TransactionContext`` is also a context manager, so you can use it with ``with`` statement::
-
-    from lato import TransactionContext 
-
-    def greet(name, greeting):
-        return f"{greeting}, {name}!"
-
-    with TransactionContext(greeting="Hola") as ctx:
-        print(ctx.call(greet, "Bob"))
-        print(ctx.call(greet, "Charlie"))
-
-``TransactionContext`` is also a decorator, so you can use it to decorate any function::
-
-    from lato import TransactionContext 
-
-    @TransactionContext(greeting="Hola")
-    def greet(name, greeting):
-        return f"{greeting}, {name}!"
-
-    print(greet("Bob"))
-    print(greet("Charlie"))
-
-``TransactionContext`` is also a class, so you can inherit from it::
-
-    from lato import TransactionContext 
-
-    class MyTransactionContext(TransactionContext):
-        def __init__(self, greeting, **kwargs):
-            super().__init__(**kwargs)
-            self.greeting = greeting
-
-        def greet(self, name):
-            return f"{self.greeting}, {name}!"
-
-    ctx = MyTransactionContext(greeting="Hola")
-    print(ctx.greet("Bob"))
-    print(ctx.greet("Charlie"))
-
-``TransactionContext`` is also a context manager, so you can use it with ``with`` statement::
-
-    from lato import TransactionContext 
-
-    class MyTransactionContext(TransactionContext):
-        def __init__(self, greeting, **kwargs):
-            super().__init__(**kwargs)
-            self.greeting = greeting
-
-        def greet(self, name):
-            return f"{self.greeting}, {name}!"
-
-    with MyTransactionContext(greeting="Hola") as ctx:
-        print(ctx.greet("Bob"))
-        print(ctx.greet("Charlie"))
-
-``TransactionContext`` is also a decorator, so you can use it to decorate any function::
-
-    from lato import TransactionContext 
-
-    class MyTransactionContext(TransactionContext):
-        def __init__(self, greeting, **kwargs):
-            super().__init__(**kwargs)
-            self.greeting = greeting
-
-        def greet(self, name):
-            return f"{self.greeting}, {name}!"
-
-    @MyTransactionContext(greeting="Hola")
-    def greet(name, greeting):
-        return f"{greeting}, {name}!"
-
-    print(greet("Bob"))
-    print
+Now, let's see the core feature of **Lato** - *automatic parameter resolution*.
+To demonstrate it, we will declare a ``greet_person`` function and call it via ``app``:
 
 .. testcode::
 
-   1+1         # this will give no output!
-   print(2+2)  # this will give output
+    def greet_person(person: str, greeting_phrase: str):
+        return f"{greeting_phrase} {person}"
 
-.. testoutput::
+    result = app.call(greet_person, "Bob")
 
-   4
+    assert result == "Hello Bob"
 
-.. If you are new to `lato`, you should start with the :ref:`dependency_provider`.
-
-Test
-==================
-
-.. autofunction:: lato.as_type
-
-.. autoclass:: lato.DependencyProvider
-   :members:
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+The ``greet_person`` function requires two arguments: ``person`` and ``greeting phrase``. When invoking the function via ``Application.call()``, 
+we provided only one argument - the value for ``person``. The missing ``greeting phrase`` argument was automatically 
+provided (injected) by the app, as it was declared as a dependency earlier. In general, **Lato** is capable of resolving 
+missing arguments both by name and by type.
 
 
+Declaring a handler
+-------------------
 
-zzzzzz
-======
+To understand what a handler is, think of it as an entry point or a use case that your application implements.
 
-Cookbook
+Now, let's decorate the ``greet_person`` function with an alias:
 
-Crawl a web page
+.. testcode::
 
-The most simple way to use our program is with no arguments.
-Simply run:
+    @app.handler("greet")
+    def greet_person(person: str, greeting_phrase: str):
+        return f"{greeting_phrase} {person}"
 
-python main.py -u <url>
+    result = app.call("greet", "Bob")
+    assert result == "Hello Bob"
 
-to crawl a webpage.
+When invoking a handler, you can pass an alias instead of the actual function object. 
+You could use this behavior in a simple command line tool, like so:
 
-Crawl a page slowly
+..  code-block:: python
 
-To add a delay to your crawler,
-use -d:
+    if __name__ == "__main__":
+        command = sys.argv[1]
+        name = sys.argv[2]
+        print(app.call(command, name))
 
-python main.py -d 10 -u <url>
 
-This will wait 10 seconds between page fetches.
+Using a command handler
+-----------------------
 
-Crawl only your blog
+**Lato** follows the `Command Pattern <https://en.wikipedia.org/wiki/Command_pattern>`_ in its design. 
+It is a behavioral design pattern which is used to implement lose coupling in a request-response model.
+The idea is to turn a request (command) into a standalone object. This object contains all parameters that are required 
+to handle a request. Such separation allows for queuing of requests, logging of the parameters for better observability,
+and invocation of the request.
 
-You will want to use the -i flag,
-which while ignore URLs matching the passed regex::
+Let's see how we can declare our function as a command handler:
 
-python main.py -i "^blog" -u <url>
+.. testcode::
+    
+    from lato import Task as Command
+    
+    class Greet(Command):
+        title: str        
+        name: str
 
-This will only crawl pages that contain your blog URL.
+    @app.handler(Greet)
+    def greet_person(command: Greet, greeting_phrase: str):
+        return f"{greeting_phrase} {command.title} {command.name}"
+
+    result = app.execute(Greet(title="Mr", name="Bob"))
+    assert result == "Hello Mr Bob"
+
+The ``Application.execute()`` passes the command to a designated handler. It should be noted that the first parameter 
+of a command handler must be a command, and the remaining parameters are resolved as dependencies.
+
+Integration with a web framework
+--------------------------------
+
+Let's see how **Lato** fits into frameworks.
+
+..  code-block:: python
+
+    from fastapi import FastAPI
+    from lato import Application, Command
+    
+    app = Application("Greetings", greeting_phrase="Hello")
+    
+    class Greet(Command):
+        title: str        
+        name: str
+
+    @app.handler(Greet)
+    def greet_person(command: Greet, greeting_phrase: str):
+        return f"{greeting_phrase} {task.title} {task.name}"
+
+
+    api = FastAPI()
+    @api.get("/greet")
+    def foo(request, title: str, name: str):
+        command = Greet(title, name)
+        message = app.execute(command)
+        return {'message': message}

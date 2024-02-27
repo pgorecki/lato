@@ -3,7 +3,7 @@ from datetime import date
 
 from common import Repository
 
-from lato import ApplicationModule, Event, Task, TransactionContext
+from lato import ApplicationModule, Event, Command, TransactionContext
 
 
 @dataclass
@@ -32,13 +32,13 @@ class Employee:
         return hash(self.id)
 
 
-class HireEmployee(Task):
+class HireEmployee(Command):
     employee_id: int
     employee_name: str
     role: str
 
 
-class FireEmployee(Task):
+class FireEmployee(Command):
     employee_id: int
 
 
@@ -59,20 +59,20 @@ employee2 = Employee(2, "Bob")
 employee_repository.add(employee1)
 employee_repository.add(employee2)
 
-employee_module = ApplicationModule("employee", employee_repository)
+employee_module = ApplicationModule("employee")
 
 
 @employee_module.handler
-def hire_employee(task: HireEmployee, repository: EmployeeRepository):
-    employee = Employee(id=task.employee_id, name=task.employee_name)
-    employee.add_engagement(WorkEngagement(task.role, date.today()))
+def hire_employee(command: HireEmployee, repository: EmployeeRepository):
+    employee = Employee(id=command.employee_id, name=command.employee_name)
+    employee.add_engagement(WorkEngagement(command.role, date.today()))
     repository.add(employee)
 
 
 @employee_module.handler
 def fire_employee(
-    task: FireEmployee, repository: EmployeeRepository, ctx: TransactionContext
+    command: FireEmployee, repository: EmployeeRepository, ctx: TransactionContext
 ):
-    employee = repository.get(task.employee_id)
+    employee = repository.get(command.employee_id)
     employee.end_current_engagement()
-    ctx.emit(EmployeeWasFired(employee_id=employee.id))
+    ctx.publish(EmployeeWasFired(employee_id=employee.id))

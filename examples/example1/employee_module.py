@@ -1,5 +1,5 @@
 from events import CandidateHired, EmployeeFired
-from tasks import AddCandidate, FireEmployee, HireCandidate
+from commands import AddCandidate, FireEmployee, HireCandidate
 
 from lato import ApplicationModule
 
@@ -12,22 +12,22 @@ def add_candidate(task: AddCandidate, logger):
 
 
 @employee_module.handler(HireCandidate)
-def hire_candidate(task: HireCandidate, emit, logger):
-    logger.info(f"Hiring candidate {task.candidate_id}")
-    emit(CandidateHired(candidate_id=task.candidate_id))
+def hire_candidate(command: HireCandidate, publish, logger):
+    logger.info(f"Hiring candidate {command.candidate_id}")
+    publish(CandidateHired(candidate_id=command.candidate_id))
 
 
 @employee_module.handler(FireEmployee)
-def fire_employee(task: FireEmployee, emit, logger):
-    logger.info(f"Firing employee {task.employee_id}")
-    emit(EmployeeFired(employee_id=task.employee_id))
+def fire_employee(command: FireEmployee, publish, logger):
+    logger.info(f"Firing employee {command.employee_id}")
+    publish(EmployeeFired(employee_id=command.employee_id))
 
 
-@employee_module.on(CandidateHired)
+@employee_module.handler(CandidateHired)
 def on_candidate_hired(event: CandidateHired, logger):
     logger.info(f"Sending onboarding email to {event.candidate_id}")
 
 
-@employee_module.on(EmployeeFired)
+@employee_module.handler(EmployeeFired)
 def on_employee_fired(event: EmployeeFired, logger):
     logger.info(f"Sending exit email to {event.employee_id}")

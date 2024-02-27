@@ -1,35 +1,35 @@
 from value_objects import CartId, ItemId, Money, Quantity
 
-from lato import Task
+from lato import Command
 
 # queries
 
 
-class GetItemDetails(Task):
+class GetItemDetails(Command):
     item_id: ItemId
 
 
 # commands
 
 
-class AddItemToCart(Task):
+class AddItemToCart(Command):
     cart_id: CartId
     item_id: ItemId
     quantity: Quantity
 
 
-class RemoveItemFromCart(Task):
+class RemoveItemFromCart(Command):
     cart_id: CartId
     item_id: ItemId
     quantity: Quantity
 
 
-class UpdateItemPrice(Task):
+class UpdateItemPrice(Command):
     item_id: ItemId
     price: Money
 
 
-class AddItemToStore(Task):
+class AddItemToStore(Command):
     item_id: ItemId
     name: str
     description: str = None
@@ -37,12 +37,12 @@ class AddItemToStore(Task):
     quantity: Quantity
 
 
-class UpdateItemAttrs(Task):
+class UpdateItemAttrs(Command):
     item_id: ItemId
     name: str = None
     description: str = None
 
 
-class ReceiveItemFromSupplier(Task):
+class ReceiveItemFromSupplier(Command):
     item_id: ItemId
     quantity: Quantity

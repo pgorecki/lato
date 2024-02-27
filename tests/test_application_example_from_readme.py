@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from lato import Application, Event, Task, TransactionContext
+from lato import Application, Event, Command, TransactionContext
 
 
 class UserService:
@@ -29,7 +29,7 @@ def test_application_example_from_readme():
         user_service.create_user(email, password)
         ctx.emit("user_created", email)
 
-    @app.on("user_created")
+    @app.handler("user_created")
     def on_user_created(email, email_service: EmailService):
         email_service.send_welcome_email(email)
 
@@ -40,13 +40,13 @@ def test_application_example_from_readme():
     assert True
 
 
-def test_handling_tasks_and_events():
+def test_handling_commands_and_events():
     app = Application(
         user_service=UserService(),
         email_service=EmailService(),
     )
 
-    class CreateUser(Task):
+    class CreateUser(Command):
         email: str
         password: str
 
@@ -54,12 +54,12 @@ def test_handling_tasks_and_events():
         email: str
 
     @app.handler(CreateUser)
-    def handle_create_user(task: CreateUser, user_service: UserService):
-        user_service.create_user(task.email, task.password)
+    def handle_create_user(command: CreateUser, user_service: UserService):
+        user_service.create_user(command.email, command.password)
 
-    @app.on(UserCreated)
+    @app.handler(UserCreated)
     def on_user_created(event: UserCreated, email_service: EmailService):
         email_service.send_welcome_email(event.email)
 
-    task = CreateUser(email="alice@example.com", password="password")
-    app.execute(task)
+    command = CreateUser(email="alice@example.com", password="password")
+    app.execute(command)

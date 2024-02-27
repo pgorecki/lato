@@ -1,8 +1,8 @@
-from lato import Application, ApplicationModule, Task
+from lato import Application, ApplicationModule, Command
 from lato.compositon import compose
 
 
-class SampleQuery(Task):
+class SampleQuery(Command):
     ...
 
 
@@ -33,43 +33,41 @@ def create_app(**kwargs):
     return app
 
 
-def test_manual_composition():
-    class SampleTask(Task):
+def test_compose_nones():
+    assert compose((None,)) is None
+    assert compose((None,None)) is None
+    assert compose((None, 1, None, 10)) == 11
+
+def test_message_composition():
+    class SampleCommand(Command):
         ...
 
     module1 = ApplicationModule("module1")
 
-    @module1.handler(SampleTask)
-    def module1_handler(task: SampleTask):
+    @module1.handler(SampleCommand)
+    def module1_handler(command: SampleCommand):
         return dict(module1="foo")
 
     module2 = ApplicationModule("module2")
 
-    @module2.handler(SampleTask)
-    def module2_handler(task: SampleTask):
+    @module2.handler(SampleCommand)
+    def module2_handler(command: SampleCommand):
         return dict(module2="bar")
 
     app = Application("app")
     app.include_submodule(module1)
     app.include_submodule(module2)
 
-    result = app.execute(SampleTask())
-    assert result == ({"module1": "foo"}, {"module2": "bar"})
-
-    result = compose(app.execute(SampleTask()))
+    result = app.execute(SampleCommand())
     assert result == {"module1": "foo", "module2": "bar"}
 
 
 def test_query_composition():
     app = create_app()
-    result = app.query(SampleQuery())
+    result = app.execute(SampleQuery())
 
     # assert
-    assert result == {
-        "a": "foo",
-        "b": "bar",
-        "c": "baz"
-    }
+    assert result == {"a": "foo", "b": "bar", "c": "baz"}
 
 
 def test_compose_decorator():
@@ -83,7 +81,7 @@ def test_compose_decorator():
         return result["a"] + result["b"] + result["c"]
 
     # act
-    result = app.query(SampleQuery())
+    result = app.execute(SampleQuery())
 
     # assert
     assert result == "foobarbaz"

@@ -6,7 +6,7 @@ from datetime import date
 class ProjectMember:
     employee_id: str
     start_date: date
-    end_date: date
+    end_date: date | None
 
 
 @dataclass

@@ -1,8 +1,11 @@
 format:
 	pre-commit run --all-files
 
-docs_sautobuild:
-	sphinx-autobuild docs docs/_build/html
+docs_autobuild:
+	sphinx-autobuild -E docs docs/_build/html
+	
+docs_test:
+	sphinx-build docs docs/_build/html -b doctest
 
 publish:
 	python3 -m build

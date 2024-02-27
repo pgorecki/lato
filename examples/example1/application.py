@@ -3,7 +3,7 @@ import uuid
 
 from employee_module import employee_module
 from project_module import project_module
-from tasks import (
+from commands import (
     AddCandidate,
     AssignEmployeeToProject,
     CreateProject,
@@ -28,11 +28,11 @@ app.include_submodule(employee_module)
 
 @app.on_enter_transaction_context
 def on_enter_transaction_context(ctx: TransactionContext):
-    logger = ctx[logging.Logger]
+    app_logger = app.get_dependency('logger')
     transaction_id = uuid.uuid4()
-    logger = logger.getChild(f"transaction-{transaction_id}")
-    ctx.dependency_provider.update(
-        logger=logger, transaction_id=transaction_id, emit=ctx.emit
+    ctx_logger = app_logger.getChild(f"transaction-{transaction_id}")
+    ctx.set_dependencies(
+        logger=ctx_logger, transaction_id=transaction_id, publish=ctx.publish
     )
     logger.debug("<<< Begin transaction")
 
@@ -57,8 +57,8 @@ def logging_middleware(ctx: TransactionContext, call_next):
     return result
 
 
-app.execute(task=AddCandidate(candidate_id="1", candidate_name="Alice"))
-app.execute(task=HireCandidate(candidate_id="1"))
-app.execute(task=CreateProject(project_id="1", project_name="Project 1"))
-app.execute(task=AssignEmployeeToProject(employee_id="1", project_id="1"))
-app.execute(task=FireEmployee(employee_id="1"))
+app.execute(AddCandidate(candidate_id="1", candidate_name="Alice"))
+app.execute(HireCandidate(candidate_id="1"))
+app.execute(CreateProject(project_id="1", project_name="Project 1"))
+app.execute(AssignEmployeeToProject(employee_id="1", project_id="1"))
+app.execute(FireEmployee(employee_id="1"))

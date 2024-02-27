@@ -1,12 +1,13 @@
+import logging
+import typing
+from logging import NullHandler
+
 from .application import Application
 from .application_module import ApplicationModule
 from .compositon import compose
 from .dependency_provider import DependencyProvider, SimpleDependencyProvider, as_type
-from .message import Event, Task
+from .message import Query, Event, Command
 from .transaction_context import TransactionContext
-import logging
-import typing
-from logging import NullHandler
 
 __all__ = [
     "Application",
@@ -14,7 +15,8 @@ __all__ = [
     "DependencyProvider",
     "SimpleDependencyProvider",
     "TransactionContext",
-    "Task",
+    "Command",
+    "Query",
     "Event",
     "as_type",
     "compose",

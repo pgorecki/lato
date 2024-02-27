@@ -1,13 +1,12 @@
+import logging
 from collections.abc import Callable
 from typing import Any
 
 from lato.application_module import ApplicationModule
-from lato.compositon import compose
 from lato.dependency_provider import SimpleDependencyProvider
-from lato.message import Event, Task
+from lato.message import Event, Command
 from lato.transaction_context import TransactionContext
 
-import logging
 log = logging.getLogger(__name__)
 
 
@@ -23,7 +22,7 @@ class Application(ApplicationModule):
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
         self._transaction_middlewares = []
-        self._composers: dict[str | Task, Callable] = {}
+        self._composers: dict[str | Command, Callable] = {}
 
     def get_dependency(self, identifier: Any) -> Any:
         """Get a dependency from the dependency provider"""
@@ -33,6 +32,10 @@ class Application(ApplicationModule):
         return self.get_dependency(item)
 
     def call(self, func: Callable | str, *args, **kwargs):
+        """
+        Invokes a callable `func` or an alias with `args` and `kwargs`. 
+        Any missing arguments will be provided by a dependency provider (if possible).
+        """
         if isinstance(func, str):
             try:
                 func = next(self.iterate_handlers_for(alias=func))
@@ -43,16 +46,15 @@ class Application(ApplicationModule):
             result = ctx.call(func, *args, **kwargs)
         return result
 
-    def execute(self, task: Task) -> tuple[Any, ...]:
+    def execute(self, command: Command) -> Any:
+        """
+        Executes a command within an execution context, and returns the result. 
+        If a command is handled by multiple handlers, then the final result is 
+        composed by an execution context and one of the composers.
+        """
         with self.transaction_context() as ctx:
-            results = ctx.execute(task)
-            return results
-
-    def query(self, task: Task) -> Any:
-        results = self.execute(task)
-        alias = task.__class__
-        composer = self._composers.get(alias, compose)
-        return composer(results)
+            result = ctx.execute(command)
+            return result
 
     def emit(self, event: Event) -> dict[Callable, Any]:
         with self.transaction_context() as ctx:
@@ -126,6 +128,7 @@ class Application(ApplicationModule):
             on_enter_transaction_context=self._on_enter_transaction_context,
             on_exit_transaction_context=self._on_exit_transaction_context,
             middlewares=self._transaction_middlewares,
+            composers=self._composers,
             handlers_iterator=self.iterate_handlers_for,
         )
         return ctx
