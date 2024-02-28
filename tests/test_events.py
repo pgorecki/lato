@@ -17,15 +17,15 @@ def create_app(**kwargs):
 
     module_b.include_submodule(module_c)
 
-    @module_a.on(SampleEvent)
+    @module_a.handler(SampleEvent)
     def on_sample_event_a(event: SampleEvent, buffer):
         buffer.append("a")
 
-    @module_b.on(SampleEvent)
+    @module_b.handler(SampleEvent)
     def on_sample_event_b(event: SampleEvent, buffer):
         buffer.append("b")
 
-    @module_c.on(SampleEvent)
+    @module_c.handler(SampleEvent)
     def on_sample_event_b(event: SampleEvent, buffer):
         buffer.append("c")
 

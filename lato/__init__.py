@@ -1,20 +1,22 @@
-from .application import Application
-from .application_module import ApplicationModule
-from .compositon import compose
-from .dependency_provider import DependencyProvider, SimpleDependencyProvider, as_type
-from .message import Event, Task
-from .transaction_context import TransactionContext
 import logging
 import typing
 from logging import NullHandler
+
+from .application import Application
+from .application_module import ApplicationModule
+from .compositon import compose
+from .dependency_provider import BasicDependencyProvider, DependencyProvider, as_type
+from .message import Command, Event, Query
+from .transaction_context import TransactionContext
 
 __all__ = [
     "Application",
     "ApplicationModule",
     "DependencyProvider",
-    "SimpleDependencyProvider",
+    "BasicDependencyProvider",
     "TransactionContext",
-    "Task",
+    "Command",
+    "Query",
     "Event",
     "as_type",
     "compose",

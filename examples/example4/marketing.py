@@ -1,6 +1,6 @@
+from commands import AddItemToStore, GetItemDetails, UpdateItemAttrs
 from pydantic import BaseModel
 from repository import Repository
-from tasks import AddItemToStore, GetItemDetails, UpdateItemAttrs
 from value_objects import ItemId, Money
 
 from lato import ApplicationModule

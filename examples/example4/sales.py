@@ -1,6 +1,6 @@
+from commands import AddItemToCart, RemoveItemFromCart, UpdateItemPrice
 from pydantic import BaseModel, Field
 from repository import Repository
-from tasks import AddItemToCart, RemoveItemFromCart, UpdateItemPrice
 from value_objects import CartId, ItemId, Money, Quantity
 
 from lato import ApplicationModule

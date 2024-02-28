@@ -1,7 +1,7 @@
 import pytest
 
-from lato.dependency_provider import SimpleDependencyProvider
-from lato.message import Task
+from lato.dependency_provider import BasicDependencyProvider
+from lato.message import Command
 from lato.transaction_context import TransactionContext
 
 
@@ -25,25 +25,25 @@ def test_call_with_kwargs():
 
 
 def test_call_with_dependencies():
-    dp = SimpleDependencyProvider(a=1, b=2)
+    dp = BasicDependencyProvider(a=1, b=2)
     ctx = TransactionContext(dp)
     assert ctx.call(add) == 3
 
 
 def test_call_with_arg_and_dependency():
-    dp = SimpleDependencyProvider(a=10, b=20)
+    dp = BasicDependencyProvider(a=10, b=20)
     ctx = TransactionContext(dp)
     assert ctx.call(add, 1) == 21
 
 
 def test_call_with_kwarg_and_dependency():
-    dp = SimpleDependencyProvider(a=10, b=20)
+    dp = BasicDependencyProvider(a=10, b=20)
     ctx = TransactionContext(dp)
     assert ctx.call(add, b=2) == 12
 
 
 def test_call_without_handlers():
     ctx = TransactionContext()
-    task = Task()
+    command = Command()
     with pytest.raises(ValueError):
-        ctx.execute(task)
+        ctx.execute(command)

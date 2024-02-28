@@ -10,9 +10,19 @@ class Message(BaseModel):
         return self.__class__
 
 
-class Task(Message):
+class Command(Message):
+    """Base class for all commands"""
+
+    ...
+
+
+class Query(Message):
+    """Base class for all queries"""
+
     ...
 
 
 class Event(Message):
+    """Base class for all events"""
+
     ...

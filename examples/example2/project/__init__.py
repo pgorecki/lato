@@ -1,3 +1,3 @@
-from lato import ApplicationModule, Event, Task, TransactionContext
+from lato import ApplicationModule, Command, Event, TransactionContext
 
 project_module = ApplicationModule("project")

@@ -53,10 +53,10 @@ def create_user_use_case(email, password, session_id, ctx: TransactionContext, u
     # session_id, TransactionContext and UserService are automatically injected by `ctx.call`
     print("Session ID:", session_id)
     user_service.create_user(email, password)
-    ctx.emit("user_created", email)
+    ctx.publish("user_created", email)
 
 
-@app.on("user_created")
+@app.handler("user_created")
 def on_user_created(email, email_service: EmailService):
     email_service.send_welcome_email(email)
 
@@ -74,43 +74,43 @@ introduce a structure in your application and how to exchange messages (events) 
 
 Let's imagine that we are building an application that allows the company to manage its candidates, 
 employees and projects. Candidates and employees are managed by the `employee` module, while projects are managed by
-the `project` module. When a candidate is hired, the `employee` module emits a `CandidateHired` event, which is handled
-by the `employee` module to send a welcome email. When an employee is fired, the `employee` module emits an 
+the `project` module. When a candidate is hired, the `employee` module publishes a `CandidateHired` event, which is handled
+by the `employee` module to send a welcome email. When an employee is fired, the `employee` module publishes an 
 `EmployeeFired` event, which is handled by both the `employee` and `project` modules to send an exit email and 
 to remove an employee from any projects, respectively.
 
-First, let's start with tasks that holds all the required information to execute a use case:
+First, let's start with commands that holds all the required information to execute a use case:
 
 ```python
-# tasks.py
+# commands.py
 
-from lato import Task
+from lato import Command
 
 
-class AddCandidate(Task):
+class AddCandidate(Command):
     candidate_id: str
     candidate_name: str
 
 
-class HireCandidate(Task):
+class HireCandidate(Command):
     candidate_id: str
 
 
-class FireEmployee(Task):
+class FireEmployee(Command):
     employee_id: str
     
     
-class CreateProject(Task):
+class CreateProject(Command):
     project_id: str
     project_name: str
     
     
-class AssignEmployeeToProject(Task):
+class AssignEmployeeToProject(Command):
     employee_id: str
     project_id: str
 ```
 
-And the events that are emitted by the application (note that all events are expressed in past tense):
+And the events that are published by the application (note that all events are expressed in past tense):
 
 ```python
 # events.py
@@ -131,7 +131,7 @@ class EmployeeAssignedToProject(Event):
     project_id: str
 ```
 
-Now let's define the employee module. Each function which is responsible for handling a specific task is decorated
+Now let's define the employee module. Each function which is responsible for handling a specific command is decorated
 with `employee_module.handler`. Similarly, each function which is responsible for handling a specific event is
 decorated with `employee_module.on`.
 
@@ -139,41 +139,41 @@ decorated with `employee_module.on`.
 # employee_module.py
 
 from lato import ApplicationModule
-from tasks import AddCandidate, HireCandidate, FireEmployee
+from commands import AddCandidate, HireCandidate, FireEmployee
 from events import CandidateHired, EmployeeFired
 
 employee_module = ApplicationModule("employee")
 
 
 @employee_module.handler(AddCandidate)
-def add_candidate(task: AddCandidate, logger):
-    logger.info(f"Adding candidate {task.candidate_name} with id {task.candidate_id}")
+def add_candidate(command: AddCandidate, logger):
+    logger.info(f"Adding candidate {command.candidate_name} with id {command.candidate_id}")
 
 
 @employee_module.handler(HireCandidate)
-def hire_candidate(task: HireCandidate, emit, logger):
-    logger.info(f"Hiring candidate {task.candidate_id}")
-    emit(CandidateHired(candidate_id=task.candidate_id))
+def hire_candidate(command: HireCandidate, publish, logger):
+    logger.info(f"Hiring candidate {command.candidate_id}")
+    publish(CandidateHired(candidate_id=command.candidate_id))
 
 
 @employee_module.handler(FireEmployee)
-def fire_employee(task: FireEmployee, emit, logger):
-    logger.info(f"Firing employee {task.employee_id}")
-    emit(EmployeeFired(employee_id=task.employee_id))
+def fire_employee(command: FireEmployee, publish, logger):
+    logger.info(f"Firing employee {command.employee_id}")
+    publish(EmployeeFired(employee_id=command.employee_id))
 
 
-@employee_module.on(CandidateHired)
+@employee_module.handler(CandidateHired)
 def on_candidate_hired(event: CandidateHired, logger):
     logger.info(f"Sending onboarding email to {event.candidate_id}")
 
 
-@employee_module.on(EmployeeFired)
+@employee_module.handler(EmployeeFired)
 def on_employee_fired(event: EmployeeFired, logger):
     logger.info(f"Sending exit email to {event.employee_id}")
 ```
 
-As you can see, some functions have additional parameters (such as `logger` or `emit`) which are automatically 
-injected by the application (to be more specific, by a transaction context) upon task or event execution. This allows 
+As you can see, some functions have additional parameters (such as `logger` or `publish`) which are automatically 
+injected by the application (to be more specific, by a transaction context) upon command or event execution. This allows 
 you to test your functions in isolation, without having to worry about dependencies. 
 
 The structure of the project module is similar to the employee module:
@@ -182,29 +182,29 @@ The structure of the project module is similar to the employee module:
 # project_module.py
 
 from lato.application_module import ApplicationModule
-from tasks import CreateProject, AssignEmployeeToProject
+from commands import CreateProject, AssignEmployeeToProject
 from events import EmployeeFired, EmployeeAssignedToProject
 
 project_module = ApplicationModule("project")
 
 
-@project_module.on(EmployeeFired)
+@project_module.handler(EmployeeFired)
 def on_employee_fired(event: EmployeeFired, logger):
     logger.info(f"Checking if employee {event.employee_id} is assigned to a project")
 
 
 @project_module.handler(CreateProject)
-def create_project(task: CreateProject, logger):
-    logger.info(f"Creating project {task.project_name} with id {task.project_id}")
+def create_project(command: CreateProject, logger):
+    logger.info(f"Creating project {command.project_name} with id {command.project_id}")
     
     
 @project_module.handler(AssignEmployeeToProject)
-def assign_employee_to_project(task: AssignEmployeeToProject, emit, logger):
-    logger.info(f"Assigning employee {task.employee_id} to project {task.project_id}")
-    emit(EmployeeAssignedToProject(employee_id=task.employee_id, project_id=task.project_id))
+def assign_employee_to_project(command: AssignEmployeeToProject, publish, logger):
+    logger.info(f"Assigning employee {command.employee_id} to project {command.project_id}")
+    publish(EmployeeAssignedToProject(employee_id=command.employee_id, project_id=command.project_id))
     
     
-@project_module.on(EmployeeAssignedToProject)
+@project_module.handler(EmployeeAssignedToProject)
 def on_employee_assigned_to_project(event: EmployeeAssignedToProject, logger):
     logger.info(f"Sending 'Welcome to project {event.project_id}' email to employee {event.employee_id}")
 ```
@@ -222,7 +222,7 @@ import uuid
 from lato import Application, TransactionContext
 from employee_module import employee_module
 from project_module import project_module
-from tasks import AddCandidate, HireCandidate, CreateProject, AssignEmployeeToProject, FireEmployee
+from commands import AddCandidate, HireCandidate, CreateProject, AssignEmployeeToProject, FireEmployee
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -241,7 +241,7 @@ def on_enter_transaction_context(ctx: TransactionContext):
     logger = ctx[logging.Logger]
     transaction_id = uuid.uuid4()
     logger = logger.getChild(f"transaction-{transaction_id}")
-    ctx.dependency_provider.update(logger=logger, transaction_id=transaction_id, emit=ctx.emit)
+    ctx.dependency_provider.update(logger=logger, transaction_id=transaction_id, publish=ctx.publish)
     logger.debug("<<< Begin transaction")
 
 @app.on_exit_transaction_context
@@ -259,11 +259,11 @@ def logging_middleware(ctx: TransactionContext, call_next):
     return result
 
 
-app.execute(task=AddCandidate(candidate_id="1", candidate_name="Alice"))
-app.execute(task=HireCandidate(candidate_id="1"))
-app.execute(task=CreateProject(project_id="1", project_name="Project 1"))
-app.execute(task=AssignEmployeeToProject(employee_id="1", project_id="1"))
-app.execute(task=FireEmployee(employee_id="1"))
+app.execute(command=AddCandidate(candidate_id="1", candidate_name="Alice"))
+app.execute(command=HireCandidate(candidate_id="1"))
+app.execute(command=CreateProject(project_id="1", project_name="Project 1"))
+app.execute(command=AssignEmployeeToProject(employee_id="1", project_id="1"))
+app.execute(command=FireEmployee(employee_id="1"))
 ```
 
 The first thing to notice is that the `Application` class is instantiated with a `logger`. This logger is used as
@@ -274,21 +274,21 @@ submodule.
 Next, we have the `on_enter_transaction_context` and `on_exit_transaction_context` hooks. These hooks are called
 whenever a transaction context is created or destroyed. The transaction context is automatically created when
 `app.execute` is called. The purpose of a transaction context is to hold all the dependencies that are required
-to execute a task or handle an event, and also to create any transaction level dependencies. In this example, we
+to execute a command or handle an event, and also to create any transaction level dependencies. In this example, we
 use the `on_enter_transaction_context` hook to update the transaction context with a logger and a transaction id,
 but in a real application you would probably want to use the hooks to begin a database transaction and commit/rollback 
 any changes. If you need to get a dependency from the transaction context, you can use the `ctx[identifier]` syntax, 
 where `identifier` is the name (i.e. `logger`) or type (i.e. `logging.Logger`) of the dependency.
 
 
-There is also a `logging_middleware` which is used to log the execution of any tasks and events. This middleware is
-automatically called whenever a task or event is executed, and there may be multiple middlewares chained together.
+There is also a `logging_middleware` which is used to log the execution of any commands and events. This middleware is
+automatically called whenever a command or event is executed, and there may be multiple middlewares chained together.
 
-Finally, we have the `app.execute` calls which are used to execute tasks and events. The `app.execute` method
+Finally, we have the `app.execute` calls which are used to execute commands and events. The `app.execute` method
 automatically creates a transaction context and calls the `call` method of the transaction context. The `call` method
-is responsible for executing the task or event, and it will automatically inject any dependencies that are required.
+is responsible for executing the command or event, and it will automatically inject any dependencies that are required.
 
-In addition, you can use `app.emit` to emit any external event, i.e. from a webhooks or a message queue.
+In addition, you can use `app.publish` to publish any external event, i.e. from a webhooks or a message queue.
 
 ## Examples
 

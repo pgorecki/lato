@@ -1,5 +1,5 @@
 from application import create_ecommerce_app
-from tasks import AddItemToStore, GetItemDetails
+from commands import AddItemToStore, GetItemDetails
 
 from lato import compose
 

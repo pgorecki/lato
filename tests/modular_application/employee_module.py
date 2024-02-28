@@ -20,11 +20,11 @@ def fire_employee(employee_id, emit, printlog):
     emit("employee_fired", employee_id)
 
 
-@employee_module.on("employee_hired")
+@employee_module.handler("employee_hired")
 def on_employee_hired(employee_id, printlog):
     printlog(f"Sending onboarding email to {employee_id}")
 
 
-@employee_module.on("employee_fired")
+@employee_module.handler("employee_fired")
 def on_employee_fired(employee_id, printlog):
     printlog(f"Sending exit email to {employee_id}")

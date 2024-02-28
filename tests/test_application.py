@@ -1,6 +1,6 @@
 import pytest
 
-from lato import Application, Event, Task, TransactionContext
+from lato import Application, Command, Event, TransactionContext
 
 
 class FooService:
@@ -119,7 +119,7 @@ def test_app_uses_middleware():
 def test_emitting_and_handling_events():
     app = Application()
 
-    @app.on("sample_event")
+    @app.handler("sample_event")
     def on_sample_event(x, buffer):
         buffer.append(f"on_sample_event {x}")
 
@@ -153,7 +153,7 @@ def test_emitting_and_handling_events_uses_middleware():
         ctx[Counter].inc()
         call_next()
 
-    @app.on("sample_event")
+    @app.handler("sample_event")
     def on_sample_event():
         ...
 
@@ -166,18 +166,18 @@ def test_emitting_and_handling_events_uses_middleware():
     assert ctx[Counter].value == 2
 
 
-def test_app_executes_task():
+def test_app_executes_command():
     app = Application()
 
-    class MyTask(Task):
+    class MyCommand(Command):
         message: str
 
-    @app.handler(MyTask)
-    def handle_my_task(task: MyTask):
-        return f"processed {task.message}"
+    @app.handler(MyCommand)
+    def handle_my_command(command: MyCommand):
+        return f"processed {command.message}"
 
-    task = MyTask(message="foo")
-    assert app.execute(task) == ("processed foo",)
+    command = MyCommand(message="foo")
+    assert app.execute(command) == "processed foo"
 
 
 def test_app_handles_external_event():
@@ -186,7 +186,7 @@ def test_app_handles_external_event():
     class MyEvent(Event):
         message: str
 
-    @app.on(MyEvent)
+    @app.handler(MyEvent)
     def handle_my_event(event: MyEvent):
         return f"handled {task.message}"
 

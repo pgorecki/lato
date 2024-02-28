@@ -1,49 +1,90 @@
+import logging
 from collections import defaultdict
 from collections.abc import Callable
 
-from lato.message import Event, Task
+from lato.message import Message
 from lato.utils import OrderedSet
 
-import logging
 log = logging.getLogger(__name__)
 
 
 class ApplicationModule:
     def __init__(self, name: str):
+        """Initialize the application module instance.
+
+        :param name: Name of the module
+        """
         self.name: str = name
         self._handlers: defaultdict[str, OrderedSet[Callable]] = defaultdict(OrderedSet)
         self._submodules: OrderedSet[ApplicationModule] = OrderedSet()
 
     def include_submodule(self, a_module: "ApplicationModule"):
+        """Adds a child submodule to this module.
+
+        :param a_module: child module to add
+        """
         assert isinstance(
             a_module, ApplicationModule
         ), f"Can only include {ApplicationModule} instances, got {a_module}"
         self._submodules.add(a_module)
 
-    def handler(self, alias):
+    def handler(self, alias: type[Message] | str):
         """
-        Decorator for registering tasks
+        Decorator for registering a handler. Handler can be aliased by a name or by a message type.
+
+        :param alias: :class:`lato.Message` or a string.
+
+        Example #1:
+        -----------
+        >>> from lato import Application, ApplicationModule
+        >>> my_module = ApplicationModule("my_module")
+        >>>
+        >>> @my_module.handler("my_handler")
+        >>> def my_handler():
+        >>>     print("handler called")
+        >>>
+        >>> app = Application("example")
+        >>> app.include_submodule(my_module)
+        >>> app.call("my_handler")
+        "handler called"
+
+        Example #2:
+        -----------
+        >>> from lato import ApplicationModule, Command
+        >>> class MyCommand(Command):
+        >>>     ...
+        >>>
+        >>> my_module = ApplicationModule("my_module")
+        >>> @my_module.handler(MyCommand)
+        >>> def my_handler(command: MyCommand):
+        >>>     print("command handler called")
+        >>>
+        >>> app = Application("example")
+        >>> app.include_submodule(my_module)
+        >>> app.execute(MyCommand())
+        command handler called
+
         """
         try:
-            is_task_or_event = issubclass(alias, (Task, Event))
+            is_message = issubclass(alias, Message)
         except TypeError:
-            is_task_or_event = False
+            is_message = False
 
-        if callable(alias) and not is_task_or_event:
-            # @app.handle(my_function)
+        if callable(alias) and not is_message:
+            # decorator was called without any argument
             func = alias
             alias = func.__name__
             assert len(self._handlers[alias]) == 0
             self._handlers[alias].add(func)
             return func
 
-        # @app.handle("my_function")
-        # @app.handle(MyTask)
+        # decorator was called with argument
+        # @my_module.handle("my_function")
+        # @my_module.handle(MyCommand)
         def decorator(func):
             """
             Decorator for registering tasks by name
             """
-            assert len(self._handlers[alias]) == 0
             self._handlers[alias].add(func)
             return func
 
@@ -61,14 +102,6 @@ class ApplicationModule:
 
     def get_handlers_for(self, alias: str):
         return list(self.iterate_handlers_for(alias))
-
-    def on(self, event_name):
-        # TODO: add matcher parameter
-        def decorator(func):
-            self._handlers[event_name].add(func)
-            return func
-
-        return decorator
 
     def __repr__(self):
         return f"<{self.name} {object.__repr__(self)}>"
