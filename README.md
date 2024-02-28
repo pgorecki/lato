@@ -24,6 +24,8 @@ pip install lato
 
 ## Quickstart
 
+[Check out documentation](https://lato.readthedocs.io/)
+
 Here's a simple example to get you started:
 
 ```python
