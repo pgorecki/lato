@@ -1,8 +1,6 @@
 import logging
 import uuid
 
-from employee_module import employee_module
-from project_module import project_module
 from commands import (
     AddCandidate,
     AssignEmployeeToProject,
@@ -10,6 +8,8 @@ from commands import (
     FireEmployee,
     HireCandidate,
 )
+from employee_module import employee_module
+from project_module import project_module
 
 from lato import Application, TransactionContext
 
@@ -28,7 +28,7 @@ app.include_submodule(employee_module)
 
 @app.on_enter_transaction_context
 def on_enter_transaction_context(ctx: TransactionContext):
-    app_logger = app.get_dependency('logger')
+    app_logger = app.get_dependency("logger")
     transaction_id = uuid.uuid4()
     ctx_logger = app_logger.getChild(f"transaction-{transaction_id}")
     ctx.set_dependencies(

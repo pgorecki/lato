@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from lato import Application, Event, Command, TransactionContext
+from lato import Application, Command, Event, TransactionContext
 
 
 class UserService:

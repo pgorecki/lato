@@ -4,14 +4,13 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from typing import Any, NewType, Optional
 
+from lato.compositon import compose
 from lato.dependency_provider import (
-    DependencyProvider,
     BasicDependencyProvider,
+    DependencyProvider,
     as_type,
 )
-from lato.compositon import compose
-from lato.message import Message, Command
-
+from lato.message import Message
 
 Alias = NewType("Alias", Any)
 
@@ -20,10 +19,10 @@ log = logging.getLogger(__name__)
 
 class TransactionContext:
     """Transaction context is a context manager for handler execution.
-    
-    :param dependency_provider_factory: a factory that returns :class:`DependencyProvider` instance, 
+
+    :param dependency_provider_factory: a factory that returns :class:`DependencyProvider` instance,
         defaults to BasicDependencyProvider.
-        
+
     **Example:**
 
     >>> from lato import TransactionContext
@@ -35,8 +34,9 @@ class TransactionContext:
     >>>     ctx.call(my_function, param2="bar")
     foo, bar
     """
+
     dependency_provider_factory = BasicDependencyProvider
-    
+
     def __init__(
         self, dependency_provider: DependencyProvider | None = None, *args, **kwargs
     ):
@@ -47,7 +47,7 @@ class TransactionContext:
         :param args: Additional positional arguments to be passed to the dependency provider.
         :param kwargs: Additional keyword arguments to be passed to the dependency provider.
         """
-        
+
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
@@ -88,7 +88,7 @@ class TransactionContext:
 
     def begin(self):
         """Starts a transaction by calling `on_enter_transaction_context` callback.
-        
+
         The callback could be used to set up the transaction-level dependencies (i.e. current time, transaction id),
         or to start the database transaction.
         """
@@ -97,11 +97,11 @@ class TransactionContext:
         self._on_enter_transaction_context(self)
 
     def end(self, exception: Exception = None):
-        """Ends the transaction context by calling `on_exit_transaction_context` callback, 
-        optionally passing an exception. 
-        
+        """Ends the transaction context by calling `on_exit_transaction_context` callback,
+        optionally passing an exception.
+
         The callback could be used to commit/end a database transaction.
-        
+
         :param exception: Optional; The exception to handle at the end of the transaction, if any.
         """
         self._on_exit_transaction_context(self, exception)
@@ -130,7 +130,7 @@ class TransactionContext:
     def call(self, func: Callable, *func_args: Any, **func_kwargs: Any) -> Any:
         """Call a function with the arguments and keyword arguments.
         Missing arguments will be resolved with the dependency provider.
-        
+
         :param func: The function to call.
         :param func_args: Positional arguments to pass to the function.
         :param func_kwargs: Keyword arguments to pass to the function.
@@ -162,8 +162,6 @@ class TransactionContext:
 
         composed_result = self._compose_results(message, values)
         return composed_result
-        
-
 
     def emit(self, message: str | Message, *args, **kwargs) -> dict[Callable, Any]:
         # TODO: mark as obsolete
@@ -185,7 +183,7 @@ class TransactionContext:
 
         all_results = OrderedDict()
         for handler in self._handlers_iterator(alias):
-            self.set_dependency('message', message)
+            self.set_dependency("message", message)
             # FIXME: push and pop current action instead of setting it
             self.current_handler = handler
             result = self.call(handler, *args, **kwargs)
@@ -199,7 +197,7 @@ class TransactionContext:
     def set_dependency(self, identifier: Any, dependency: Any) -> None:
         """Sets a dependency in the dependency provider"""
         self.dependency_provider.register_dependency(identifier, dependency)
-        
+
     def set_dependencies(self, **kwargs):
         # TODO: add *args
         """Sets multiple dependencies at once"""
@@ -207,13 +205,13 @@ class TransactionContext:
 
     def __getitem__(self, item) -> Any:
         return self.get_dependency(item)
-    
+
     def _compose_results(self, message: Message, results: tuple[Any, ...]) -> Any:
         alias = message.__class__  # TODO: expose alias as static field in Message class
         composer = self._composers.get(alias, compose)
         return composer(results)
-    
+
     @property
     def current_action(self) -> tuple[Message, Callable]:
         """Returns current message and handler being executed"""
-        return self.get_dependency('message'), self.current_handler
+        return self.get_dependency("message"), self.current_handler

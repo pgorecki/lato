@@ -1,7 +1,8 @@
 from uuid import UUID
-from commands import CreateTodo, CompleteTodo
-from queries import  GetAllTodos
+
 from application import create_app
+from commands import CompleteTodo, CreateTodo
+from queries import GetAllTodos
 
 app = create_app()
 

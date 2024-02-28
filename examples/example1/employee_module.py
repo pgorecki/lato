@@ -1,5 +1,5 @@
-from events import CandidateHired, EmployeeFired
 from commands import AddCandidate, FireEmployee, HireCandidate
+from events import CandidateHired, EmployeeFired
 
 from lato import ApplicationModule
 

@@ -4,7 +4,7 @@ from typing import Any
 
 from lato.application_module import ApplicationModule
 from lato.dependency_provider import BasicDependencyProvider, DependencyProvider
-from lato.message import Event, Command, Message
+from lato.message import Command, Event, Message
 from lato.transaction_context import TransactionContext
 
 log = logging.getLogger(__name__)
@@ -14,20 +14,26 @@ class Application(ApplicationModule):
     """Core Application class.
 
     This class represents the core functionality of an application and extends :class:`ApplicationModule`.
-    
-    :param dependency_provider_factory: a factory that returns :class:`DependencyProvider` instance, 
+
+    :param dependency_provider_factory: a factory that returns :class:`DependencyProvider` instance,
         defaults to BasicDependencyProvider.
     """
+
     dependency_provider_factory: type[DependencyProvider] = BasicDependencyProvider
 
-    def __init__(self, name=__name__, dependency_provider: DependencyProvider | None = None, **kwargs):
+    def __init__(
+        self,
+        name=__name__,
+        dependency_provider: DependencyProvider | None = None,
+        **kwargs,
+    ):
         """Initialize the application instance.
-        
+
         :param name: Name of the application
         :param dependency_provider: dependency provider :class:`DependencyProvider` instance.
                                     Defaults to :class:`BasicDependencyProvider` instance populated with kwargs.
         :param kwargs: Additional keyword arguments to be passed to the dependency provider.
-          
+
         """
         super().__init__(name)
         self.dependency_provider = (
@@ -41,9 +47,9 @@ class Application(ApplicationModule):
 
     def get_dependency(self, identifier: str | type) -> Any:
         """Gets a dependency from the dependency provider. Dependencies can be resolved either by name or by type.
-        
+
         :param identifier: A string or a type representing the dependency.
-        
+
         :return: The resolved dependency.
         """
         return self.dependency_provider.get_dependency(identifier)
@@ -54,15 +60,15 @@ class Application(ApplicationModule):
     def call(self, func: Callable | str, *args, **kwargs):
         """Invokes a function with `args` and `kwargs` within the :class:`TransactionContext`.
         If `func` is a string, then it is an alias, and the corresponding handler for the alias is retrieved.
-        Any missing arguments are provided by the dependency provider of a transaction context, 
+        Any missing arguments are provided by the dependency provider of a transaction context,
         and args and kwargs parameters.
-        
+
         :param func: The function to invoke, or an alias.
         :param args: Arguments to pass to the function.
         :param kwargs: Keyword arguments to pass to the function.
-        
+
         :return: The result of the invoked function.
-        
+
         :raises ValueError: If an alias is provided, but no corresponding handler is found.
         """
         if isinstance(func, str):
@@ -76,14 +82,14 @@ class Application(ApplicationModule):
         return result
 
     def execute(self, message: Message) -> Any:
-        """Executes a command within the :class:`TransactionContext`. 
+        """Executes a command within the :class:`TransactionContext`.
         Use :func:`handler` decorator to register a handler for the command.
-        If a command is handled by multiple handlers, then the final result is 
+        If a command is handled by multiple handlers, then the final result is
         composed to a single return value using :func:`compose` decorator.
-        
+
         :param message: The message to be executed (usually, a :class:`Command` or :class:`Query` subclass).
         :return: The result of the invoked message handler.
-        
+
         :raises: ValueError: If no handlers are found for the message.
         """
         with self.transaction_context() as ctx:
@@ -148,8 +154,8 @@ class Application(ApplicationModule):
 
     def transaction_context(self, **dependencies) -> TransactionContext:
         """Creates a transaction context for the app.
-        
-        The lifecycle of a transaction context is controlled by :func:`transaction_middleware`, 
+
+        The lifecycle of a transaction context is controlled by :func:`transaction_middleware`,
         :func:`on_enter_transaction_context`, :func:`on_exit_transaction_context` decorators.
 
         :param dependencies: Keyword arguments to be passed as dependencies to the dependency provider of a transaction

@@ -38,10 +38,11 @@ def get_function_parameters(func) -> OrderedDict:
 class DependencyProvider(ABC):
     """A dependency provider interface that provides dependencies and helps in automatic
     dependency injection based on type or parameter name.
-    
+
     :param allow_names: `True` if dependency resolution by name is supported. Defaults to `True`
     :param allow_types: `True` if dependency resolution by type is supported. Defaults to `True`
     """
+
     allow_names = True
     allow_types = True
 
@@ -77,7 +78,7 @@ class DependencyProvider(ABC):
     @abstractmethod
     def copy(self, *args, **kwargs) -> "DependencyProvider":
         """Creates a copy of self with updated dependencies.
-        
+
         :param args: dependencies to update, identified by type.
         :param kwargs: dependencies to update, identified by name and type.
         :return: A copy of the dependency provider.
@@ -153,9 +154,9 @@ class DependencyProvider(ABC):
         :param func: The function to get arguments for
         :param func_args: Positional arguments to the function
         :param func_kwargs: Keyword arguments to the function
-        :return: A dictionary of resolved dependencies, where the key is the name of the parameter and 
+        :return: A dictionary of resolved dependencies, where the key is the name of the parameter and
             the value is the resolved dependency.
-        """        
+        """
 
         if func_args is None:
             func_args = []

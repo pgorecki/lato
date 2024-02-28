@@ -12,14 +12,17 @@ class Message(BaseModel):
 
 class Command(Message):
     """Base class for all commands"""
+
     ...
 
 
 class Query(Message):
     """Base class for all queries"""
+
     ...
 
 
 class Event(Message):
     """Base class for all events"""
+
     ...

@@ -1,6 +1,6 @@
 import pytest
 
-from lato import Application, Event, Command, TransactionContext
+from lato import Application, Command, Event, TransactionContext
 
 
 class FooService:

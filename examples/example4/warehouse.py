@@ -1,7 +1,7 @@
 from collections import defaultdict
 
-from pydantic import BaseModel, Field
 from commands import AddItemToCart, ReceiveItemFromSupplier, RemoveItemFromCart
+from pydantic import BaseModel, Field
 from value_objects import CartId, ItemId, Quantity
 
 

@@ -5,8 +5,8 @@ from logging import NullHandler
 from .application import Application
 from .application_module import ApplicationModule
 from .compositon import compose
-from .dependency_provider import DependencyProvider, BasicDependencyProvider, as_type
-from .message import Query, Event, Command
+from .dependency_provider import BasicDependencyProvider, DependencyProvider, as_type
+from .message import Command, Event, Query
 from .transaction_context import TransactionContext
 
 __all__ = [

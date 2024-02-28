@@ -20,7 +20,7 @@ class ApplicationModule:
 
     def include_submodule(self, a_module: "ApplicationModule"):
         """Adds a child submodule to this module.
-        
+
         :param a_module: child module to add
         """
         assert isinstance(
@@ -31,9 +31,9 @@ class ApplicationModule:
     def handler(self, alias: type[Message] | str):
         """
         Decorator for registering a handler. Handler can be aliased by a name or by a message type.
-        
+
         :param alias: :class:`lato.Message` or a string.
-        
+
         Example #1:
         -----------
         >>> from lato import Application, ApplicationModule
@@ -47,7 +47,7 @@ class ApplicationModule:
         >>> app.include_submodule(my_module)
         >>> app.call("my_handler")
         "handler called"
-        
+
         Example #2:
         -----------
         >>> from lato import ApplicationModule, Command
@@ -63,7 +63,7 @@ class ApplicationModule:
         >>> app.include_submodule(my_module)
         >>> app.execute(MyCommand())
         command handler called
-        
+
         """
         try:
             is_message = issubclass(alias, Message)
@@ -77,7 +77,7 @@ class ApplicationModule:
             assert len(self._handlers[alias]) == 0
             self._handlers[alias].add(func)
             return func
-        
+
         # decorator was called with argument
         # @my_module.handle("my_function")
         # @my_module.handle(MyCommand)

@@ -1,5 +1,5 @@
-from events import EmployeeAssignedToProject, EmployeeFired
 from commands import AssignEmployeeToProject, CreateProject
+from events import EmployeeAssignedToProject, EmployeeFired
 
 from lato.application_module import ApplicationModule
 
@@ -18,7 +18,9 @@ def create_project(command: CreateProject, logger):
 
 @project_module.handler(AssignEmployeeToProject)
 def assign_employee_to_project(command: AssignEmployeeToProject, publish, logger):
-    logger.info(f"Assigning employee {command.employee_id} to project {command.project_id}")
+    logger.info(
+        f"Assigning employee {command.employee_id} to project {command.project_id}"
+    )
     publish(
         EmployeeAssignedToProject(
             employee_id=command.employee_id, project_id=command.project_id

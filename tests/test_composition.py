@@ -35,8 +35,9 @@ def create_app(**kwargs):
 
 def test_compose_nones():
     assert compose((None,)) is None
-    assert compose((None,None)) is None
+    assert compose((None, None)) is None
     assert compose((None, 1, None, 10)) == 11
+
 
 def test_message_composition():
     class SampleCommand(Command):
