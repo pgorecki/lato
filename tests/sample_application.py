@@ -1,5 +1,5 @@
 from lato import Application, TransactionContext
-from lato.dependency_provider import SimpleDependencyProvider
+from lato.dependency_provider import BasicDependencyProvider
 
 
 class RealFooService:
@@ -16,7 +16,7 @@ def sample_use_case(foo_service, bar_service):
     return ", ".join([foo_service.run(), bar_service.run()])
 
 
-dependency_provider = SimpleDependencyProvider(
+dependency_provider = BasicDependencyProvider(
     foo_service=RealFooService(),
 )
 
@@ -25,7 +25,7 @@ application = Application("sample_application", dependency_provider=dependency_p
 
 @application.on_create_transaction_context
 def on_create_transaction_context():
-    dependency_provider = SimpleDependencyProvider(
+    dependency_provider = BasicDependencyProvider(
         foo_service=application["foo_service"],  # same dependency for each transaction
         bar_service=RealBarService(),  # new dependency for each transaction
     )

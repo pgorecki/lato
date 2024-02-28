@@ -204,7 +204,7 @@ def assign_employee_to_project(command: AssignEmployeeToProject, publish, logger
     publish(EmployeeAssignedToProject(employee_id=command.employee_id, project_id=command.project_id))
     
     
-@project_module.on(EmployeeAssignedToProject)
+@project_module.handler(EmployeeAssignedToProject)
 def on_employee_assigned_to_project(event: EmployeeAssignedToProject, logger):
     logger.info(f"Sending 'Welcome to project {event.project_id}' email to employee {event.employee_id}")
 ```

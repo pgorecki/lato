@@ -20,12 +20,12 @@ sys.path.insert(0, doc_root)
 project = "lato"
 copyright = "2023, Przemysław Górecki"
 author = "Przemysław Górecki"
-release = "0.5.0"
+release = "latest"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["myst_parser", "sphinx.ext.autodoc", "sphinx.ext.doctest"]
+extensions = ["myst_parser", "sphinx.ext.autodoc", "sphinx_autodoc_typehints", "sphinx.ext.doctest"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

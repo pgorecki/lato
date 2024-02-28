@@ -1,28 +1,39 @@
-Welcome to lato documentation!
-==============================
+Lato documentation
+==================
 
+**Lato** is a microframework for building modular applications in Python. It helps you to build applications 
+that are easy to maintain and extend. It is based on such concepts as 
+`modularity <https://en.wikipedia.org/wiki/Modular_programming>`_,
+`dependency injection <https://en.wikipedia.org/wiki/Dependency_injection>`_, 
+and `loose coupling <https://en.m.wikipedia.org/wiki/Loose_coupling>`_.
+
+If you are trying to build a modular monolith in Python, **Lato** is the right choice for you. It is framework agnostic,
+you can use it with any framework of your choice, i.e. `Flask`, `FastAPI`, etc.
+
+Lato is Open Source and licensed under the MIT License.
+
+
+Core Features
+-------------
+
+- **Modularity**: Organize your application into smaller, independent modules for better maintainability.
+
+- **Flexibility**: Loosely couple your application components, making them easier to refactor and extend.
+
+- **Testability**: Easily test your application components in isolation.
+
+- **Minimalistic**: Intuitive and lean API for rapid development without the bloat.
+
+Contents
+--------
 
 ..  toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     tutorial/index
     key_concepts/index
     testing
     api
-
-
-**Lato** is a microframework for building modular applications in Python. It helps you to build applications 
-that are easy to maintain and extend. It is based on the idea of `modularity <https://en.wikipedia.org/wiki/Modular_programming>`_ 
-and `dependency injection <https://en.wikipedia.org/wiki/Dependency_injection>`_.
-
-If you are trying to build a modular monolith, **Lato** is the right choice for you. It is framework agnostic,
-you can use it with any framework you want (`Flask`, `FastAPI`, ...).
-
-Features:
-
-- CQRS
-- dependency injection
-
 
 Installation
 ============
@@ -35,9 +46,11 @@ Getting Started
 ===============
 
 The ``Application`` serves as a top-level building block in **Lato**. 
-Let's create a useless greeting application. During the construction of the application,
-we can pass as many dependencies as we need - and later on we will see how the dependencies are being used. 
-In this example we will need only one dependency: ``greeting_phrase``:
+Let's create a simple greeting application. When you instantiate the application
+you need to name it, and in addition you can pass as many keyword arguments as you need - they will be used as dependencies. 
+Later on you will see how the dependencies are being used. 
+
+Let's create the application with one dependency - ``greeting_phrase``:
 
 
 .. testcode::
@@ -51,7 +64,7 @@ Resolving parameters
 --------------------
 
 Now, let's see the core feature of **Lato** - *automatic parameter resolution*.
-To demonstrate it, we will declare a ``greet_person`` function and call it via ``app``:
+To demonstrate it, let's declare a ``greet_person`` function and invoke it via ``app.call``:
 
 .. testcode::
 
@@ -63,17 +76,18 @@ To demonstrate it, we will declare a ``greet_person`` function and call it via `
     assert result == "Hello Bob"
 
 The ``greet_person`` function requires two arguments: ``person`` and ``greeting phrase``. When invoking the function via ``Application.call()``, 
-we provided only one argument - the value for ``person``. The missing ``greeting phrase`` argument was automatically 
-provided (injected) by the app, as it was declared as a dependency earlier. In general, **Lato** is capable of resolving 
-missing arguments both by name and by type.
+we provided only one argument - the value of ``person``. The other argument - ``greeting phrase`` is automatically 
+provided (injected) by the app, as you provided it as a dependency. In general, **Lato** application is capable of injecting 
+missing function arguments, if the function parameter matches the dependency (either by parameter name, or by type).
 
 
 Declaring a handler
 -------------------
 
-To understand what a handler is, think of it as an entry point or a use case that your application implements.
+To understand what a handler is, think of it as of named function. This name is an *alias*, which is a string.
+When invoking a handler, you can pass an alias instead of the function itself. This idea promotes loose coupling.
 
-Now, let's decorate the ``greet_person`` function with an alias:
+You can create the handler and call it using its alias like so:
 
 .. testcode::
 
@@ -84,7 +98,7 @@ Now, let's decorate the ``greet_person`` function with an alias:
     result = app.call("greet", "Bob")
     assert result == "Hello Bob"
 
-When invoking a handler, you can pass an alias instead of the actual function object. 
+ 
 You could use this behavior in a simple command line tool, like so:
 
 ..  code-block:: python
@@ -104,7 +118,7 @@ The idea is to turn a request (command) into a standalone object. This object co
 to handle a request. Such separation allows for queuing of requests, logging of the parameters for better observability,
 and invocation of the request.
 
-Let's see how we can declare our function as a command handler:
+Instead of using an alias, you can create a command handler, and then invoke the handler by calling ``App.execute()``:
 
 .. testcode::
     
@@ -122,12 +136,12 @@ Let's see how we can declare our function as a command handler:
     assert result == "Hello Mr Bob"
 
 The ``Application.execute()`` passes the command to a designated handler. It should be noted that the first parameter 
-of a command handler must be a command, and the remaining parameters are resolved as dependencies.
+of a command handler is a command, and the remaining parameters are resolved from application dependencies.
 
 Integration with a web framework
 --------------------------------
 
-Let's see how **Lato** fits into frameworks.
+**Lato** is web framework agnostic. Let's see how it fits into our framework of choice - FastAPI:
 
 ..  code-block:: python
 

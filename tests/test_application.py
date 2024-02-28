@@ -119,7 +119,7 @@ def test_app_uses_middleware():
 def test_emitting_and_handling_events():
     app = Application()
 
-    @app.on("sample_event")
+    @app.handler("sample_event")
     def on_sample_event(x, buffer):
         buffer.append(f"on_sample_event {x}")
 
@@ -153,7 +153,7 @@ def test_emitting_and_handling_events_uses_middleware():
         ctx[Counter].inc()
         call_next()
 
-    @app.on("sample_event")
+    @app.handler("sample_event")
     def on_sample_event():
         ...
 

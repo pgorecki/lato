@@ -24,8 +24,7 @@ In addition to a ``TodoModel``, we will also create a corresponding ``TodoReadMo
    :pyobject: TodoReadModel
 
 Why do we need 2 models? ``TodoModel`` serves as a domain model that encapsulates the business logic of a todo entity. 
-This model will be altered by command handlers defined within a *todos* module. This model will be modified by command 
-handlers defined within the *todos* module. In simpler terms, only the *todos* module has the authority to change the 
+This model will be modified by command handlers defined within the module. In other words, only the *todos* module has the authority to change the 
 state of ``TodoModel`` other modules are not permitted to access it.
 
 On the other hand, ``TodoReadModel`` is exposed outside the *todos* module. Other modules can query the *todos* module and

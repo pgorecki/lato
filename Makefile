@@ -2,7 +2,7 @@ format:
 	pre-commit run --all-files
 
 docs_autobuild:
-	sphinx-autobuild -E docs docs/_build/html
+	sphinx-autobuild --watch lato -E docs docs/_build/html
 	
 docs_test:
 	sphinx-build docs docs/_build/html -b doctest

@@ -36,12 +36,14 @@ def get_function_parameters(func) -> OrderedDict:
 
 
 class DependencyProvider(ABC):
+    """A dependency provider interface that provides dependencies and helps in automatic
+    dependency injection based on type or parameter name.
+    
+    :param allow_names: `True` if dependency resolution by name is supported. Defaults to `True`
+    :param allow_types: `True` if dependency resolution by type is supported. Defaults to `True`
+    """
     allow_names = True
     allow_types = True
-    """
-    A dependency provider that provides dependencies and helps in automatic
-    dependency injection based on type or parameter name.
-    """
 
     @abstractmethod
     def has_dependency(self, identifier: str | type) -> bool:
@@ -49,7 +51,7 @@ class DependencyProvider(ABC):
         Check if a dependency with the given identifier exists.
 
         :param identifier: Identifier for the dependency
-        :return: True if the dependency exists, otherwise False
+        :return: `True` if the dependency exists, `otherwise` False
         """
         raise NotImplementedError()
 
@@ -72,31 +74,21 @@ class DependencyProvider(ABC):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def is_instance_of_custom_class(x):
-        """
-        Check if x is an instance of a custom (user-defined) class.
-
-        :param x: Object to check
-        :return: True if x is an instance of a custom class, otherwise False
-        """
-        return hasattr(x, "__class__")
-
     @abstractmethod
     def copy(self, *args, **kwargs) -> "DependencyProvider":
-        """
-        Create a copy of self with updated dependencies.
-        :param args: typed overrides
-        :param kwargs: named overrides
-        :return: A copy of the dependency provider
+        """Creates a copy of self with updated dependencies.
+        
+        :param args: dependencies to update, identified by type.
+        :param kwargs: dependencies to update, identified by name and type.
+        :return: A copy of the dependency provider.
         """
 
     def update(self, *args, **kwargs):
         """
-        Update the dependency provider with new dependencies.
+        Updates the dependency provider with new dependencies.
 
-        :param args:  Class instances to be updated by types
-        :param kwargs: Dependencies to be registered by types and with explicit names
+        :param args:  dependencies to update, identified by type
+        :param kwargs: dependencies to update, identified by name and type
         """
         if self.allow_types:
             for value in args:
@@ -119,7 +111,7 @@ class DependencyProvider(ABC):
         self, function_parameters: OrderedDict, overrides: dict[str, Any]
     ) -> dict[str, Any]:
         """
-        Resolve given function parameters to their corresponding dependencies.
+        Resolves given function parameters to their corresponding dependencies.
 
         :param function_parameters: Parameters of the function
         :param overrides: Manual overrides for dependencies
@@ -156,13 +148,14 @@ class DependencyProvider(ABC):
         func_kwargs: Any = None,
     ) -> dict[str, Any]:
         """
-        Resolve function parameters by providing necessary kwargs to call the function.
+        Resolves parameters of a function, by matching function parameters to dependencies.
 
         :param func: The function to get arguments for
         :param func_args: Positional arguments to the function
         :param func_kwargs: Keyword arguments to the function
-        :return: A dictionary of keyword arguments
-        """
+        :return: A dictionary of resolved dependencies, where the key is the name of the parameter and 
+            the value is the resolved dependency.
+        """        
 
         if func_args is None:
             func_args = []
@@ -196,15 +189,14 @@ class DependencyProvider(ABC):
         self.register_dependency(key, value)
 
 
-class SimpleDependencyProvider(DependencyProvider):
+class BasicDependencyProvider(DependencyProvider):
     """
     A dependency provider that manages dependencies and helps in automatic
     dependency injection based on type or parameter name.
     """
 
     def __init__(self, *args, **kwargs):
-        """
-        Initialize the DependencyProvider.
+        """Initialize the DependencyProvider.
 
         :param args: Class instances to be registered by types
         :param kwargs: Dependencies to be registered by types and with explicit names
@@ -252,7 +244,7 @@ class SimpleDependencyProvider(DependencyProvider):
         :param kwargs: named overrides
         :return: A copy of the dependency provider
         """
-        dp = SimpleDependencyProvider()
+        dp = BasicDependencyProvider()
         dp._dependencies.update(self._dependencies)
         dp.update(*args, **kwargs)
         return dp

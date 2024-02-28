@@ -5,7 +5,7 @@ from logging import NullHandler
 from .application import Application
 from .application_module import ApplicationModule
 from .compositon import compose
-from .dependency_provider import DependencyProvider, SimpleDependencyProvider, as_type
+from .dependency_provider import DependencyProvider, BasicDependencyProvider, as_type
 from .message import Query, Event, Command
 from .transaction_context import TransactionContext
 
@@ -13,7 +13,7 @@ __all__ = [
     "Application",
     "ApplicationModule",
     "DependencyProvider",
-    "SimpleDependencyProvider",
+    "BasicDependencyProvider",
     "TransactionContext",
     "Command",
     "Query",
