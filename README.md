@@ -1,7 +1,15 @@
 # Lato
 
-## Overview
-Lato is a Python microframework designed for building modular monoliths and loosely coupled applications.
+Lato is a Python microframework designed for building **modular monoliths** and **loosely coupled** applications.
+Based on dependency injection and Python 3.6+ type hints.
+
+---
+
+**Documentation**: <a href="https://lato.readthedocs.io" target="_blank">https://lato.readthedocs.io</a>
+
+**Source Code**: <a href="https://github.com/pgorecki/lato" target="_blank">https://github.com/pgorecki/lator</a>
+
+---
 
 ## Features
 
@@ -9,7 +17,7 @@ Lato is a Python microframework designed for building modular monoliths and loos
 
 - **Flexibility**: Loosely couple your application components, making them easier to refactor and extend.
 
-- **Testability**: Easily test your application components in isolation.
+- **Testability**: Easily test your application components in isolation. 
 
 - **Minimalistic**: Intuitive and lean API for rapid development without the bloat.
 
@@ -23,8 +31,6 @@ pip install lato
 ```
 
 ## Quickstart
-
-[Check out documentation](https://lato.readthedocs.io/)
 
 Here's a simple example to get you started:
 
@@ -292,14 +298,15 @@ is responsible for executing the command or event, and it will automatically inj
 
 In addition, you can use `app.publish` to publish any external event, i.e. from a webhooks or a message queue.
 
-## Examples
 
-Check out the [examples](https://github.com/pgorecki/lato/tree/main/examples) and 
-[tests](https://github.com/pgorecki/lato/tree/main/tests) for more examples.
+## Dive deeper
 
-## Docs
+For more examples check out:
 
-Coming soon...
+- [tutorial](https://lato.readthedocs.io/en/latest/tutorial/index.html)
+- [examples](https://github.com/pgorecki/lato/tree/main/examples)
+- [tests](https://github.com/pgorecki/lato/tree/main/tests)
+
 
 ## Testing
 
@@ -308,7 +315,6 @@ Run the tests using pytest:
 ```bash
 pytest tests
 ```
-
 
 
 ## What lato actually means?
