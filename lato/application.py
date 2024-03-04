@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Callable
-from typing import Any
-
+from typing import Any, Optional, Union, List
+from lato.types import DependencyIdentifier
 from lato.application_module import ApplicationModule
 from lato.dependency_provider import BasicDependencyProvider, DependencyProvider
 from lato.message import Command, Event, Message
@@ -24,7 +24,7 @@ class Application(ApplicationModule):
     def __init__(
         self,
         name=__name__,
-        dependency_provider: DependencyProvider | None = None,
+        dependency_provider: Optional[DependencyProvider] = None,
         **kwargs,
     ):
         """Initialize the application instance.
@@ -42,10 +42,10 @@ class Application(ApplicationModule):
         self._transaction_context_factory = None
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
-        self._transaction_middlewares = []
-        self._composers: dict[str | Command, Callable] = {}
+        self._transaction_middlewares: List[Callable] = []
+        self._composers: dict[Union[Message, str], Callable] = {}
 
-    def get_dependency(self, identifier: str | type) -> Any:
+    def get_dependency(self, identifier: DependencyIdentifier) -> Any:
         """Gets a dependency from the dependency provider. Dependencies can be resolved either by name or by type.
 
         :param identifier: A string or a type representing the dependency.
@@ -54,10 +54,10 @@ class Application(ApplicationModule):
         """
         return self.dependency_provider.get_dependency(identifier)
 
-    def __getitem__(self, identifier: str | type) -> Any:
+    def __getitem__(self, identifier: DependencyIdentifier) -> Any:
         return self.get_dependency(identifier)
 
-    def call(self, func: Callable | str, *args, **kwargs):
+    def call(self, func: Union[Callable, str], *args, **kwargs):
         """Invokes a function with `args` and `kwargs` within the :class:`TransactionContext`.
         If `func` is a string, then it is an alias, and the corresponding handler for the alias is retrieved.
         Any missing arguments are provided by the dependency provider of a transaction context,

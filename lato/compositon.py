@@ -3,7 +3,7 @@ from functools import partial, reduce
 from operator import add, or_
 from typing import Any, Optional
 
-from mergedeep import Strategy, merge
+from mergedeep import Strategy, merge  # type: ignore
 
 additive_merge = partial(merge, strategy=Strategy.TYPESAFE_ADDITIVE)
 

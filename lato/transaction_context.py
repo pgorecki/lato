@@ -2,8 +2,9 @@ import logging
 from collections import OrderedDict
 from collections.abc import Callable, Iterator
 from functools import partial
-from typing import Any, NewType, Optional
+from typing import Any, NewType, Optional, Union
 
+from lato.types import HandlerAlias
 from lato.compositon import compose
 from lato.dependency_provider import (
     BasicDependencyProvider,
@@ -12,7 +13,6 @@ from lato.dependency_provider import (
 )
 from lato.message import Message
 
-Alias = NewType("Alias", Any)
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class TransactionContext:
     dependency_provider_factory = BasicDependencyProvider
 
     def __init__(
-        self, dependency_provider: DependencyProvider | None = None, *args, **kwargs
+        self, dependency_provider: Optional[DependencyProvider] = None, *args, **kwargs
     ):
         """Initialize the transaction context instance.
 
@@ -56,8 +56,8 @@ class TransactionContext:
         self._on_enter_transaction_context = lambda ctx: None
         self._on_exit_transaction_context = lambda ctx, exception=None: None
         self._middlewares: list[Callable] = []
-        self._composers: dict[str | Message, Callable] = {}
-        self._handlers_iterator: Iterator = lambda alias: iter([])
+        self._composers: dict[HandlerAlias, Callable] = {}
+        self._handlers_iterator: Callable[[HandlerAlias], Iterator[Callable]] = lambda alias: iter([])
 
     def configure(
         self,
@@ -96,7 +96,7 @@ class TransactionContext:
         """Should be used to start a transaction"""
         self._on_enter_transaction_context(self)
 
-    def end(self, exception: Exception = None):
+    def end(self, exception: Optional[Exception] = None):
         """Ends the transaction context by calling `on_exit_transaction_context` callback,
         optionally passing an exception.
 
@@ -163,26 +163,26 @@ class TransactionContext:
         composed_result = self._compose_results(message, values)
         return composed_result
 
-    def emit(self, message: str | Message, *args, **kwargs) -> dict[Callable, Any]:
+    def emit(self, message: Union[str, Message], *args, **kwargs) -> dict[Callable, Any]:
         # TODO: mark as obsolete
         return self.publish(message, *args, **kwargs)
 
-    def publish(self, message: str | Message, *args, **kwargs) -> dict[Callable, Any]:
+    def publish(self, message: Union[str, Message], *args, **kwargs) -> dict[Callable, Any]:
         """
         Publish a message by calling all handlers for that message.
 
-        :param message: The message object to publish, or a string.
+        :param message: The message object to publish, or an alias of a handler to call.
         :param args: Positional arguments to pass to the handlers.
         :param kwargs: Keyword arguments to pass to the handlers.
         :return: A dictionary mapping handlers to their results.
         """
-        alias = type(message) if isinstance(message, Message) else message
+        message_type = type(message) if isinstance(message, Message) else message
 
         if isinstance(message, Message):
             args = (message, *args)
 
         all_results = OrderedDict()
-        for handler in self._handlers_iterator(alias):
+        for handler in self._handlers_iterator(message_type):  # type: ignore
             self.set_dependency("message", message)
             # FIXME: push and pop current action instead of setting it
             self.current_handler = handler
@@ -214,4 +214,4 @@ class TransactionContext:
     @property
     def current_action(self) -> tuple[Message, Callable]:
         """Returns current message and handler being executed"""
-        return self.get_dependency("message"), self.current_handler
+        return self.get_dependency("message"), self.current_handler  # type: ignore
