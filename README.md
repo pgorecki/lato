@@ -1,3 +1,6 @@
+[![Documentation Status](https://readthedocs.org/projects/lato/badge/?version=latest)](https://lato.readthedocs.io/en/latest/?badge=latest)
+
+
 # Lato
 
 Lato is a Python microframework designed for building **modular monoliths** and **loosely coupled** applications.
