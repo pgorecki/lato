@@ -1,8 +1,9 @@
+[![](https://github.com/pgorecki/lato/workflows/Tests/badge.svg)](https://github.com/pgorecki/lato/actions?query=workflow%3ATests)
 [![Documentation Status](https://readthedocs.org/projects/lato/badge/?version=latest)](https://lato.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://img.shields.io/pypi/v/lato)](https://pypi.org/project/lato/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/lato)](https://pypi.org/project/lato/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![](https://github.com/pgorecki/lato/workflows/Tests/badge.svg)](https://github.com/python-poetry/poetry-core/actions?query=workflow%3ATests)
+[![Downloads](https://static.pepy.tech/badge/lato/month)](https://pepy.tech/project/lato)
 
 # Lato
 

@@ -66,7 +66,7 @@ jobs:
         run: poetry lock --check
 
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --without examples
         
       - name: Run tests
         run: poetry run python -m pytest -p no:sugar -q tests/
