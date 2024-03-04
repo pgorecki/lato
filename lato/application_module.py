@@ -1,8 +1,8 @@
 import logging
 from collections import defaultdict
 from collections.abc import Callable
-
 from lato.message import Message
+from lato.types import HandlerAlias
 from lato.utils import OrderedSet
 
 log = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class ApplicationModule:
         ), f"Can only include {ApplicationModule} instances, got {a_module}"
         self._submodules.add(a_module)
 
-    def handler(self, alias: type[Message] | str):
+    def handler(self, alias: HandlerAlias):
         """
         Decorator for registering a handler. Handler can be aliased by a name or by a message type.
 
@@ -65,12 +65,12 @@ class ApplicationModule:
         command handler called
 
         """
-        try:
-            is_message = issubclass(alias, Message)
-        except TypeError:
-            is_message = False
+        if isinstance(alias, type):
+            is_message_type = issubclass(alias, Message)
+        else:
+            is_message_type = False
 
-        if callable(alias) and not is_message:
+        if callable(alias) and not is_message_type:
             # decorator was called without any argument
             func = alias
             alias = func.__name__

@@ -28,7 +28,7 @@ logging.getLogger(__name__).addHandler(NullHandler())
 
 def add_stderr_logger(
     level: int = logging.DEBUG,
-) -> logging.StreamHandler[typing.TextIO]:
+) -> logging.StreamHandler:
     """
     Helper for quickly adding a StreamHandler to the logger. Useful for
     debugging.

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
+from lato.types import DependencyIdentifier
 from lato.utils import OrderedDict
 
 
@@ -47,7 +48,7 @@ class DependencyProvider(ABC):
     allow_types = True
 
     @abstractmethod
-    def has_dependency(self, identifier: str | type) -> bool:
+    def has_dependency(self, identifier: DependencyIdentifier) -> bool:
         """
         Check if a dependency with the given identifier exists.
 
@@ -57,7 +58,7 @@ class DependencyProvider(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def register_dependency(self, identifier: str | type, dependency: Any):
+    def register_dependency(self, identifier: DependencyIdentifier, dependency: Any):
         """
         Register a dependency with a given identifier (name or type).
 
@@ -66,7 +67,7 @@ class DependencyProvider(ABC):
         """
         raise NotImplementedError()
 
-    def get_dependency(self, identifier: str | type) -> Any:
+    def get_dependency(self, identifier: DependencyIdentifier) -> Any:
         """
         Retrieve a dependency using its identifier (name or type).
 
@@ -205,7 +206,7 @@ class BasicDependencyProvider(DependencyProvider):
         self._dependencies = {}
         self.update(*args, **kwargs)
 
-    def register_dependency(self, identifier: str | type, dependency: Any):
+    def register_dependency(self, identifier: DependencyIdentifier, dependency: Any):
         """
         Register a dependency with a given identifier (name or type).
 
@@ -217,7 +218,7 @@ class BasicDependencyProvider(DependencyProvider):
 
         self._dependencies[identifier] = dependency
 
-    def has_dependency(self, identifier: str | type) -> bool:
+    def has_dependency(self, identifier: DependencyIdentifier) -> bool:
         """
         Check if a dependency with the given identifier exists.
 
@@ -226,7 +227,7 @@ class BasicDependencyProvider(DependencyProvider):
         """
         return identifier in self._dependencies
 
-    def get_dependency(self, identifier: str | type) -> Any:
+    def get_dependency(self, identifier: DependencyIdentifier) -> Any:
         """
         Retrieve a dependency using its identifier (name or type).
 
