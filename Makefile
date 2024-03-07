@@ -12,4 +12,4 @@ docs_pre_publish:
 
 publish:
 	python3 -m build
-	python3 -m twine upload --repository pypi dist/*
+	python3 -m twine upload --config-file .pypirc --repository pypi dist/*
