@@ -14,7 +14,7 @@ Based on dependency injection and Python 3.6+ type hints.
 
 **Documentation**: <a href="https://lato.readthedocs.io" target="_blank">https://lato.readthedocs.io</a>
 
-**Source Code**: <a href="https://github.com/pgorecki/lato" target="_blank">https://github.com/pgorecki/lator</a>
+**Source Code**: <a href="https://github.com/pgorecki/lato" target="_blank">https://github.com/pgorecki/lato</a>
 
 ---
 

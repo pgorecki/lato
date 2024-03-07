@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lato"
-version = "0.9.2"
+version = "0.9.3"
 description = "Lato is a Python microframework designed for building modular monoliths and loosely coupled applications."
 authors = ["Przemysław Górecki <przemyslaw.gorecki@gmail.com>"]
 readme = "README.md"
