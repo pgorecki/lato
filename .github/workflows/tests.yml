@@ -75,4 +75,4 @@ jobs:
         run: poetry run mypy lato
         
       - name: Run doctest
-        run: poetry pytest --doctest-modules lato
+        run: poetry run pytest --doctest-modules lato
