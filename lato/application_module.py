@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Callable
+
 from lato.message import Message
 from lato.types import HandlerAlias
 from lato.utils import OrderedSet
@@ -40,30 +41,29 @@ class ApplicationModule:
         >>> my_module = ApplicationModule("my_module")
         >>>
         >>> @my_module.handler("my_handler")
-        >>> def my_handler():
-        >>>     print("handler called")
+        ... def my_handler():
+        ...     print("handler called")
         >>>
         >>> app = Application("example")
         >>> app.include_submodule(my_module)
         >>> app.call("my_handler")
-        "handler called"
+        handler called
 
         Example #2:
         -----------
         >>> from lato import ApplicationModule, Command
         >>> class MyCommand(Command):
-        >>>     ...
+        ...     pass
         >>>
         >>> my_module = ApplicationModule("my_module")
         >>> @my_module.handler(MyCommand)
-        >>> def my_handler(command: MyCommand):
-        >>>     print("command handler called")
+        ... def my_handler(command: MyCommand):
+        ...     print("command handler called")
         >>>
         >>> app = Application("example")
         >>> app.include_submodule(my_module)
         >>> app.execute(MyCommand())
         command handler called
-
         """
         if isinstance(alias, type):
             is_message_type = issubclass(alias, Message)
