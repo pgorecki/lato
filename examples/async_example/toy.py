@@ -3,7 +3,7 @@ import logging
 
 from lato import Application, TransactionContext
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 root_logger = logging.getLogger("toy")
 
 app = Application()

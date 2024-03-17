@@ -25,7 +25,12 @@ For now, let's look at the FastAPI example:
     
     @api.get("/")
     async def root(app: Annotated[Application, Depends(get_application)]):
-        result = app.execute(GetAllTodos())
+        result = await app.execute_async(GetAllTodos())
         return {"todos": result}
+
+FastAPI supports ``async / await`` syntax, and we take advantage of it by using ``await app.execute_async(...)`` instead
+of ``app.execute(...)`` we used before. 
+
+See :ref:`concurrency` for more details on writing concurrent code in Lato.
 
 This concludes the tutorial.

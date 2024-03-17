@@ -1,3 +1,6 @@
+.. meta::
+   :http-equiv=Content-Type: text/html; charset=ISO-8859-1
+
 Lato documentation
 ==================
 
@@ -32,6 +35,7 @@ Contents
 
     tutorial/index
     key_concepts/index
+    concurrency
     testing
     api
 
@@ -122,7 +126,7 @@ Instead of using an alias, you can create a command handler, and then invoke the
 
 .. testcode::
     
-    from lato import Task as Command
+    from lato import Command
     
     class Greet(Command):
         title: str        
