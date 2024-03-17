@@ -28,6 +28,8 @@ Based on dependency injection and Python 3.6+ type hints.
 
 - **Minimalistic**: Intuitive and lean API for rapid development without the bloat.
 
+- **Async Support**: Concurrency and async / await is supported.
+
 
 ## Installation
 

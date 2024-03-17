@@ -192,3 +192,19 @@ def test_app_handles_external_event():
 
     task = MyEvent(message="foo")
     assert app.emit(task) == {handle_my_event: "handled foo"}
+
+
+def test_create_transaction_context_callback():
+    from lato import Application, TransactionContext
+
+    app = Application()
+
+    class CustomTransactionContext(TransactionContext):
+        pass
+
+    @app.on_create_transaction_context
+    def create_transaction_context(**kwargs):
+        return CustomTransactionContext(**kwargs)
+
+    ctx = app.transaction_context(foo="bar")
+    assert isinstance(ctx, CustomTransactionContext)

@@ -1,5 +1,10 @@
 format:
 	pre-commit run --all-files
+	
+test:
+	pytest
+	mypy lato
+	pytest --doctest-modules lato
 
 docs_autobuild:
 	sphinx-autobuild --watch lato -E docs docs/_build/html
