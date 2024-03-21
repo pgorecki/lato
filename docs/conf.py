@@ -7,6 +7,7 @@ doc_root = dirname(__file__)
 tutorial_src_root = sep.join([doc_root, "tutorial", "src"])
 
 sys.path.insert(0, doc_root)
+sys.path.insert(0, "..")
 
 # Configuration file for the Sphinx documentation builder.
 #

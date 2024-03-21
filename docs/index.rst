@@ -1,5 +1,7 @@
 .. meta::
    :http-equiv=Content-Type: text/html; charset=ISO-8859-1
+   :description: Lato - a Python microframework for building modular applications
+   :google-site-verification: Iliv_95Aua1_V110coworVO8MGv98wf-cSr1OfaXZQA
 
 Lato documentation
 ==================
