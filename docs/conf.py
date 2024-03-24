@@ -31,6 +31,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx_autodoc_typehints",
     "sphinx.ext.doctest",
+    "sphinxcontrib.jquery",
 ]
 
 templates_path = ["_templates"]
