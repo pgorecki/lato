@@ -84,7 +84,8 @@ class Application(ApplicationModule):
         """
         if isinstance(func, str):
             try:
-                func = next(self.iterate_handlers_for(alias=func))
+                message_handler = next(self.iterate_handlers_for(alias=func))
+                func = message_handler.fn
             except StopIteration:
                 raise ValueError(f"Handler not found", func)
 
@@ -110,7 +111,8 @@ class Application(ApplicationModule):
         """
         if isinstance(func, str):
             try:
-                func = next(self.iterate_handlers_for(alias=func))
+                message_handler = next(self.iterate_handlers_for(alias=func))
+                func = message_handler.fn
             except StopIteration:
                 raise ValueError(f"Handler not found", func)
 
@@ -249,13 +251,38 @@ class Application(ApplicationModule):
         Decorator for registering a middleware function to be called when executing a function in a transaction context
         :param middleware_func:
         :return: the decorated function
+        
+        **Example:**
+        
+        >>> from typing import Callable
+        >>> from lato import Application, TransactionContext
+        >>>
+        >>> app = Application()
+        
+        >>> @app.transaction_middleware
+        ... def middleware1(ctx: TransactionContext, call_next: Callable):
+        ...     ...
+        
         """
         self._transaction_middlewares.insert(0, middleware_func)
         return middleware_func
 
     def compose(self, alias):
         """
-        Decorator for composing results of handlers identified by an alias
+        Decorator for composing results of handlers identified by an alias.
+        
+        **Example:**
+        
+        >>> from lato import Application, Command, TransactionContext
+        
+        >>> class SomeCommand(Command):
+        ...     pass
+        >>>
+        >>> app = Application()
+        
+        >>> @app.compose(SomeCommand)
+        ... def middleware1(**kwargs):
+        ...     ...
         """
 
         def decorator(func):

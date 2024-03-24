@@ -3,8 +3,9 @@ from collections import defaultdict
 from collections.abc import Callable
 
 from lato.message import Message
+from lato.transaction_context import MessageHandler
 from lato.types import HandlerAlias
-from lato.utils import OrderedSet
+from lato.utils import OrderedSet, string_to_kwarg_name
 
 log = logging.getLogger(__name__)
 
@@ -18,6 +19,10 @@ class ApplicationModule:
         self.name: str = name
         self._handlers: defaultdict[str, OrderedSet[Callable]] = defaultdict(OrderedSet)
         self._submodules: OrderedSet[ApplicationModule] = OrderedSet()
+
+    @property
+    def identifier(self):
+        return string_to_kwarg_name(self.name)
 
     def include_submodule(self, a_module: "ApplicationModule"):
         """Adds a child submodule to this module.
@@ -93,7 +98,7 @@ class ApplicationModule:
     def iterate_handlers_for(self, alias: str):
         if alias in self._handlers:
             for handler in self._handlers[alias]:
-                yield handler
+                yield MessageHandler(source=self.identifier, message=alias, fn=handler)
         for submodule in self._submodules:
             try:
                 yield from submodule.iterate_handlers_for(alias)

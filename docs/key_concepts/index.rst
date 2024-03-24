@@ -5,8 +5,10 @@ Key Concepts
     :maxdepth: 3
 
     handlers
+    modularity
+    events
     transaction_context
-    dependency_injection    
     middlewares
+    dependency_injection    
     cq_composition
 

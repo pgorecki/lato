@@ -1,15 +1,15 @@
 from collections.abc import Callable
 from functools import partial, reduce
 from operator import add, or_
-from typing import Any, Optional
+from typing import Optional
 
 from mergedeep import Strategy, merge  # type: ignore
 
 additive_merge = partial(merge, strategy=Strategy.TYPESAFE_ADDITIVE)
 
 
-def compose(values: tuple[Any, ...], operator: Optional[Callable] = None):
-    values = tuple(v for v in values if v is not None)
+def compose(compose_operator: Optional[Callable] = None, **kwargs):
+    values = tuple(value for module_name, value in kwargs.items() if value is not None)
 
     if len(values) == 0:
         return None
@@ -18,8 +18,8 @@ def compose(values: tuple[Any, ...], operator: Optional[Callable] = None):
     if len(values) == 1:
         return first
 
-    if operator is not None:
-        operators = [operator]
+    if compose_operator is not None:
+        operators = [compose_operator]
     else:
         operators = [additive_merge, or_, add]
 

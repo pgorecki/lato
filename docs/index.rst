@@ -29,6 +29,8 @@ Core Features
 
 - **Minimalistic**: Intuitive and lean API for rapid development without the bloat.
 
+- **Concurrency support**: built-in support for coroutines declared with async / await syntax.
+
 Contents
 --------
 

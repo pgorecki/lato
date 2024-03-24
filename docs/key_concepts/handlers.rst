@@ -19,17 +19,11 @@ In this approach, a function is passed to a :func:`Application.call` as is:
     from lato import Application
 
     def foo():
-        print("called directly")
+        return "called directly"
 
     app = Application("example")
     
-    app.call(foo)
-
-And the output is: 
-
-.. testoutput::
-
-    called
+    assert app.call(foo) == "called directly"
 
 
 Calling a function using an *alias*
@@ -38,26 +32,34 @@ Calling a function using an *alias*
 In this approach, a function is first decorated with :func:`ApplicationM.handler`, and then called using an alias:
 
 .. testcode::
-    from lato import ApplicationModule
 
     from lato import Application
     app = Application("example")
 
-    @app.handler("alias_of_foo")
-    def foo():
-        print("called via alias")
+    @app.handler("alias_of_bar")
+    def bar():
+        return "called via alias"
  
-    app.call("alias_of_foo")
-
-And the output is: 
-
-.. testoutput::
-
-    called via alias
+    app.call("alias_of_bar") == "called via alias"
 
 
-Calling the function using a message handler
+Calling the function using a command
 --------------------------------------------
 
-In this approach, a message is declared, then a :func:`Application.handler` decorator is used to 
-associate the message with its handler.
+In this approach, a command is declared, then a :func:`Application.handler` decorator is used to 
+associate the command with its handler.
+
+.. testcode::
+
+    from lato import Application, Command
+    app = Application("example")
+
+    class SampleCommand(Command):
+        x: int
+
+
+    @app.handler(SampleCommand)
+    def sample_command_handler(command: SampleCommand):
+        return f"called sample command with x={command.x}"
+ 
+    app.execute(SampleCommand(x=1)) == "called sample command with x=1"

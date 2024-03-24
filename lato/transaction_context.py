@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable, Iterator
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Optional, Union
 
@@ -16,13 +17,24 @@ from lato.types import HandlerAlias
 
 log = logging.getLogger(__name__)
 
+
+@dataclass
+class MessageHandler:
+    source: str
+    message: HandlerAlias
+    fn: Callable
+
+    def __hash__(self):
+        return hash((self.source, self.fn))
+
+
 OnEnterTransactionContextCallback = Callable[["TransactionContext"], Awaitable[None]]
 OnExitTransactionContextCallback = Callable[
     ["TransactionContext", Optional[Exception]], Awaitable[None]
 ]
 MiddlewareFunction = Callable[["TransactionContext", Callable], Awaitable[Any]]
 ComposerFunction = Callable[..., Callable]
-HandlersIterator = Callable[[HandlerAlias], Iterator[Callable]]
+HandlersIterator = Callable[[HandlerAlias], Iterator[MessageHandler]]
 
 
 class TransactionContext:
@@ -59,7 +71,7 @@ class TransactionContext:
             dependency_provider or self.dependency_provider_factory(*args, **kwargs)
         )
         self.resolved_kwargs: dict[str, Any] = {}
-        self.current_handler: Optional[Callable] = None
+        self.current_handler: Optional[MessageHandler] = None
         self._on_enter_transaction_context: Optional[
             OnEnterTransactionContextCallback
         ] = None
@@ -251,12 +263,11 @@ class TransactionContext:
         :raises: ValueError: If no handlers are found for the message.
         """
         results = self.publish(message)
-        values = tuple(results.values())
 
-        if len(values) == 0:
-            raise ValueError("No handlers found for message", values)
+        if len(results) == 0:
+            raise ValueError("No handlers found for message", message)
 
-        composed_result = self._compose_results(message, values)
+        composed_result = self._compose_results(message, results)
         return composed_result
 
     async def execute_async(self, message: Message) -> tuple[Any, ...]:
@@ -267,23 +278,22 @@ class TransactionContext:
         :raises: ValueError: If no handlers are found for the message.
         """
         results = await self.publish_async(message)
-        values = tuple(results.values())
 
-        if len(values) == 0:
-            raise ValueError("No handlers found for message", values)
+        if len(results) == 0:
+            raise ValueError("No handlers found for message", message)
 
-        composed_result = self._compose_results(message, values)
+        composed_result = self._compose_results(message, results)
         return composed_result
 
     def emit(
         self, message: Union[str, Message], *args, **kwargs
-    ) -> dict[Callable, Any]:
+    ) -> dict[MessageHandler, Any]:
         # TODO: mark as obsolete
         return self.publish(message, *args, **kwargs)
 
     def publish(
         self, message: Union[str, Message], *args, **kwargs
-    ) -> dict[Callable, Any]:
+    ) -> dict[MessageHandler, Any]:
         """
         Publish a message by calling all handlers for that message.
 
@@ -302,13 +312,13 @@ class TransactionContext:
             self.set_dependency("message", message)
             # FIXME: push and pop current action instead of setting it
             self.current_handler = handler
-            result = self.call(handler, *args, **kwargs)
+            result = self.call(handler.fn, *args, **kwargs)
             all_results[handler] = result
         return all_results
 
     async def publish_async(
         self, message: Union[str, Message], *args, **kwargs
-    ) -> dict[Callable, Awaitable[Any]]:
+    ) -> dict[MessageHandler, Awaitable[Any]]:
         """
         Asynchronously publish a message by calling all handlers for that message.
 
@@ -330,7 +340,7 @@ class TransactionContext:
             self.current_handler = (
                 None  # FIXME: multiple handlers can be running asynchronously
             )
-            result = await self.call_async(handler, *args, **kwargs)
+            result = await self.call_async(handler.fn, *args, **kwargs)
             all_results[handler] = result
         return all_results
 
@@ -350,10 +360,15 @@ class TransactionContext:
     def __getitem__(self, item) -> Any:
         return self.get_dependency(item)
 
-    def _compose_results(self, message: Message, results: tuple[Any, ...]) -> Any:
+    def _compose_results(
+        self, message: Message, results: dict[MessageHandler, Any]
+    ) -> Any:
         alias = message.__class__  # TODO: expose alias as static field in Message class
         composer = self._composers.get(alias, compose)
-        return composer(results)
+        # TODO: there may be multiple values for one source, it this case we should raise an exception and
+        # instruct developer to implement a composer on a source level
+        kwargs = {k.source: v for k, v in results.items()}
+        return composer(**kwargs)
 
     @property
     def current_action(self) -> tuple[Message, Callable]:

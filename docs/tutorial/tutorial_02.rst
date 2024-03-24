@@ -32,8 +32,8 @@ receive the read model. If other modules need to make changes, they should not d
 Instead, they should request the modification by sending a message to the todos module.
 
 
-Todo repository
----------------
+Repository
+----------
 
 Our design pattern of choice for storing and retrieving entities is the *repository pattern*. 
 

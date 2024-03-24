@@ -191,7 +191,7 @@ def test_app_handles_external_event():
         return f"handled {task.message}"
 
     task = MyEvent(message="foo")
-    assert app.emit(task) == {handle_my_event: "handled foo"}
+    assert tuple(app.publish(task).values()) == ("handled foo",)
 
 
 def test_create_transaction_context_callback():

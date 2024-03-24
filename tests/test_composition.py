@@ -9,9 +9,9 @@ class SampleQuery(Command):
 def create_app(**kwargs):
     app = Application(name="App", **kwargs)
 
-    module_a = ApplicationModule("Module A")
-    module_b = ApplicationModule("Module B")
-    module_c = ApplicationModule("Module C")
+    module_a = ApplicationModule("ModuleA")
+    module_b = ApplicationModule("ModuleB")
+    module_c = ApplicationModule("ModuleC")
 
     app.include_submodule(module_a)
     app.include_submodule(module_b)
@@ -34,9 +34,8 @@ def create_app(**kwargs):
 
 
 def test_compose_nones():
-    assert compose((None,)) is None
-    assert compose((None, None)) is None
-    assert compose((None, 1, None, 10)) == 11
+    assert compose() is None
+    assert compose(a=None, b=None) is None
 
 
 def test_message_composition():
@@ -76,9 +75,9 @@ def test_compose_decorator():
     app = create_app()
 
     @app.compose(SampleQuery)
-    def compose_sample_query(result):
+    def compose_sample_query(**kwargs):
         # this function will receive a tuple of results from all 3 handlers
-        result = compose(result)
+        result = compose(**kwargs)
         return result["a"] + result["b"] + result["c"]
 
     # act

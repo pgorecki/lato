@@ -1,5 +1,5 @@
-Putting all things together
-===========================
+Putting it all together
+=======================
 
 Up to this point, we have defined messages, their corresponding handlers, and organized them into modules. 
 Now it's finally time to put everything together.

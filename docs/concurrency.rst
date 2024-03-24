@@ -15,14 +15,19 @@ Below is an example of async application:
 
     import asyncio
     import logging
+    import sys
     
     from lato import Application, TransactionContext
     
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO, format='%(name)s%(message)s')
     root_logger = logging.getLogger("toy")
-    
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s:%(message)s'))
+    root_logger.addHandler(stream_handler)
+
+
     app = Application()
-    
+   
     
     class Counter:
         def __init__(self):

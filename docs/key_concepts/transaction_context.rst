@@ -3,10 +3,13 @@
 Transaction Context
 ===================
 
-``TransactionContext`` is a core concept of ``lato``. It's main purpose is to inject dependencies into any function.
+:func:`~lato.TransactionContext` is a core building block in ``lato``. It's main purpose is to inject dependencies into a handler function.
 When ``TransactionContext`` is calling a function using `call` method, it will inspect all its arguments and 
-it will try to inject its arguments (dependencies) into it. Any arguments passed to ``TransactionContext.call`` that 
-match to the function signature will be passed to the called function.
+it will try to inject all matching dependencies into it. This greatly simplifies testing.
+
+You can instantiate :func:`~lato.TransactionContext` with any args and kwargs. These arguments will be injected to a handler 
+during a call. Any arguments passed to ``TransactionContext.call`` that match the function 
+signature will be passed to the called function, and will replace the ones passed in the constructor.
 
 ::
 
@@ -20,14 +23,14 @@ match to the function signature will be passed to the called function.
     
     assert result == "Hello, Alice!"
 
-As you can see, ``greeting`` and ``name`` arguments in ``TransactionContext.call`` are actually passed to the ``greet`` function.
+As you can see, ``greeting`` and ``name`` arguments in ``TransactionContext.call()`` are actually passed to the ``greet`` function.
 You can use both keyword and positional arguments::
     
     ctx.call(greet, "Alice", "Hello")
     ctx.call(greet, "Alice", greeting="Hello")
     
 
-Instead of passing passing dependencies to ``TransactionContext.call``, it's often more convenient to pass them to ``TransactionContext`` 
+Instead of passing passing dependencies to ``TransactionContext.call()``, it's often more convenient to pass them to ``TransactionContext`` 
 constructor::
 
     from lato import TransactionContext 
@@ -40,10 +43,7 @@ constructor::
     print(ctx.call(greet, "Charlie"))
 
 .. note::
-    Any arguments passed to ``TransactionContext.call`` will override arguments passed to the constructor.
-
-
-``TransactionContext`` is capable of injecting positional arguments, keyworded arguments, and typed arguments.
+    Any arguments passed to ``TransactionContext.call()`` will override arguments passed to the TransactionContext constructor.
 
 ::
 
@@ -57,11 +57,8 @@ constructor::
         ...
 
     ctx = TransactionContext(foo_service=FooService())
-    ctx.call(do_something)
-    ctx.call(do_something_else)
-
-
-
+    ctx.call(do_something)  # will inject an instance of FooService using name `foo_service`  
+    ctx.call(do_something_else)  # will inject an instance of FooService using type `FooService`
 
 
 ``TransactionContext`` is also a context manager, so you can use it with ``with`` statement::
@@ -75,65 +72,9 @@ constructor::
         print(ctx.call(greet, "Bob"))
         print(ctx.call(greet, "Charlie"))
 
-``TransactionContext`` is also a decorator, so you can use it to decorate any function::
 
-    from lato import TransactionContext 
 
-    @TransactionContext(greeting="Hola")
-    def greet(name, greeting):
-        return f"{greeting}, {name}!"
-
-    print(greet("Bob"))
-    print(greet("Charlie"))
-
-``TransactionContext`` is also a class, so you can inherit from it::
-
-    from lato import TransactionContext 
-
-    class MyTransactionContext(TransactionContext):
-        def __init__(self, greeting, **kwargs):
-            super().__init__(**kwargs)
-            self.greeting = greeting
-
-        def greet(self, name):
-            return f"{self.greeting}, {name}!"
-
-    ctx = MyTransactionContext(greeting="Hola")
-    print(ctx.greet("Bob"))
-    print(ctx.greet("Charlie"))
-
-``TransactionContext`` is also a context manager, so you can use it with ``with`` statement::
-
-    from lato import TransactionContext 
-
-    class MyTransactionContext(TransactionContext):
-        def __init__(self, greeting, **kwargs):
-            super().__init__(**kwargs)
-            self.greeting = greeting
-
-        def greet(self, name):
-            return f"{self.greeting}, {name}!"
-
-    with MyTransactionContext(greeting="Hola") as ctx:
-        print(ctx.greet("Bob"))
-        print(ctx.greet("Charlie"))
-
-``TransactionContext`` is also a decorator, so you can use it to decorate any function::
-
-    from lato import TransactionContext 
-
-    class MyTransactionContext(TransactionContext):
-        def __init__(self, greeting, **kwargs):
-            super().__init__(**kwargs)
-            self.greeting = greeting
-
-        def greet(self, name):
-            return f"{self.greeting}, {name}!"
-
-    @MyTransactionContext(greeting="Hola")
-    def greet(name, greeting):
-        return f"{greeting}, {name}!"
-
-    print(greet("Bob"))
-    print
-
+It is rarely needed to instantiate transaction context directly. In most cases, it is sufficient to call 
+any of the Application methods: :func:`~lato.Application.call`, 
+:func:`~lato.Application.execute`, or :func:`~lato.Application.publish`, which creates the transaction context under the
+hood.

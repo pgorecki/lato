@@ -38,7 +38,7 @@ def create_app() -> Application:
     def logging_middleware(ctx: TransactionContext, call_next: Callable) -> Any:
         handler = ctx.current_handler
         message_name = ctx.get_dependency("message").__class__.__name__
-        handler_name = f"{handler.__module__}.{handler.__name__}"
+        handler_name = f"{handler.source}.{handler.fn.__name__}"
         print(f"Executing {handler_name}({message_name})")
         result = call_next()
         print(f"Result from {handler_name}: {result}")
