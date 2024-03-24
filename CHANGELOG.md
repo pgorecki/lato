@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.11.0] - 2024-03-24
+
+- Change `composer()` signature from `compose(values)` to `compose(**kwargs)`
+
 ## [0.10.0] - 2024-03-17
 
 ### Added
