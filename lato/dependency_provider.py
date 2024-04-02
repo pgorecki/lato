@@ -109,40 +109,6 @@ class DependencyProvider(ABC):
             return value.a_type, value.value
         return type(value), value
 
-    def _resolve_arguments(
-        self, function_parameters: OrderedDict, overrides: dict[str, Any]
-    ) -> dict[str, Any]:
-        """
-        Resolves given function parameters to their corresponding dependencies.
-
-        :param function_parameters: Parameters of the function
-        :param overrides: Manual overrides for dependencies
-        :return: A dictionary of resolved dependencies
-        """
-
-        def _resolve(identifier, overrides):
-            if identifier in overrides:
-                return overrides[identifier]
-            return self.get_dependency(identifier)
-
-        kwargs = {}
-        for param_name, param_type in function_parameters.items():
-            # first, try to resolve by type
-            if param_type == inspect.Parameter.empty:
-                try:
-                    kwargs[param_name] = _resolve(param_type, overrides)
-                    continue
-                except (ValueError, KeyError):
-                    pass
-            # then, try to resolve by name
-            try:
-                kwargs[param_name] = _resolve(param_name, overrides)
-                continue
-            except (ValueError, KeyError):
-                pass
-
-        return kwargs
-
     def resolve_func_params(
         self,
         func: Callable,
@@ -169,17 +135,21 @@ class DependencyProvider(ABC):
         arg_idx = 0
         for param_name, param_type in func_parameters.items():
             if arg_idx < len(func_args):
+                # use positional argument given explicitly in func_args
                 resolved_kwargs[param_name] = func_args[arg_idx]
                 arg_idx += 1
                 continue
 
             if param_name in func_kwargs:
+                # use keyword argument given explicitly in func_kwargs
                 resolved_kwargs[param_name] = func_kwargs[param_name]
             elif param_type != inspect.Parameter.empty and self.has_dependency(
                 param_type
             ):
+                # resolve as dependency by type
                 resolved_kwargs[param_name] = self.get_dependency(param_type)
             elif self.has_dependency(param_name):
+                # resolve as dependency by name
                 resolved_kwargs[param_name] = self.get_dependency(param_name)
 
         return resolved_kwargs
