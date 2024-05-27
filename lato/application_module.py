@@ -17,7 +17,9 @@ class ApplicationModule:
         :param name: Name of the module
         """
         self.name: str = name
-        self._handlers: defaultdict[str, OrderedSet[Callable]] = defaultdict(OrderedSet)
+        self._handlers: defaultdict[HandlerAlias, OrderedSet[Callable]] = defaultdict(
+            OrderedSet
+        )
         self._submodules: OrderedSet[ApplicationModule] = OrderedSet()
 
     @property
