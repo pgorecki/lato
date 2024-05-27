@@ -34,7 +34,7 @@ class ApplicationModule:
         ), f"Can only include {ApplicationModule} instances, got {a_module}"
         self._submodules.add(a_module)
 
-    def handler(self, alias: HandlerAlias):
+    def handler(self, alias: HandlerAlias | Callable) -> Callable:
         """
         Decorator for registering a handler. Handler can be aliased by a name or by a message type.
 
