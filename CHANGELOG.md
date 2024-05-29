@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.11.1] - 2024-05-29
+
+- Fix type annotations in `ApplicationModule`
+
 ## [0.11.0] - 2024-03-24
 
 - Change `composer()` signature from `compose(values)` to `compose(**kwargs)`
