@@ -45,11 +45,12 @@ Application module structure
 
 The application module can be implemented as a Python package::
 
-    |- application.py
-    |- sample_module/
-       |- __init__.py
-       |- commands.py
-       |- events.py
+    src/
+    ├── application.py
+    └── sample_module/
+       ├── __init__.py
+       ├── commands.py
+       └── events.py
 
 ..  code-block:: python
 
