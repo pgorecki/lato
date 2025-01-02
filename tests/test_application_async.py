@@ -190,6 +190,6 @@ async def test_call_async_handler_with_sync_middleware():
         await asyncio.sleep(0.001)
         return 1
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         # cannot use synchronous middleware with async handler
         await app.call_async("async_foo")

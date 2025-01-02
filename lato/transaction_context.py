@@ -14,6 +14,7 @@ from lato.dependency_provider import (
 )
 from lato.message import Message
 from lato.types import HandlerAlias
+from lato.utils import maybe_await
 
 log = logging.getLogger(__name__)
 
@@ -175,6 +176,20 @@ class TransactionContext:
         else:
             log.debug("Ended transaction")
 
+    def is_async_context_manager(self) -> bool:
+        """
+        Determine if the transaction context requires `async with` context manager.
+
+        This method checks if either the `on_enter` or `on_exit` callbacks
+        associated with the transaction context are asynchronous.
+
+        :return: True if `on_enter` or `on_exit` are asynchronous callbacks, False otherwise.
+        """
+        return any(
+            [asyncio.iscoroutinefunction(self._on_enter_transaction_context)]
+            + [asyncio.iscoroutinefunction(self._on_exit_transaction_context)]
+        )
+
     def iterate_handlers_for(self, alias: str):
         yield from self._handlers_iterator(alias)
 
@@ -196,40 +211,41 @@ class TransactionContext:
         if asyncio.iscoroutine(result):
             await result
 
-    def _wrap_with_middlewares(self, handler_func):
-        p = handler_func
-        for middleware in self._middlewares:
-            if not asyncio.iscoroutinefunction(
-                middleware
-            ) and asyncio.iscoroutinefunction(handler_func):
-                raise ValueError(
-                    "Cannot use synchronous middleware with async handler",
-                    middleware,
-                    handler_func,
-                )
-
-            p = partial(middleware, self, p)
-        return p
-
     def call(self, func: Callable, *func_args: Any, **func_kwargs: Any) -> Any:
         """Call a function with the arguments and keyword arguments.
         Missing arguments will be resolved with the dependency provider.
+
+        If func is coroutine, or any of the middleware functions is coroutine, TypeError will be raised.
 
         :param func: The function to call.
         :param func_args: Positional arguments to pass to the function.
         :param func_kwargs: Keyword arguments to pass to the function.
         :return: The result of the function call.
         """
+        if asyncio.iscoroutinefunction(func):
+            raise TypeError(
+                f"Using async function ({func}) with {self.__class__.__name__}.call() is not allowed. Use call_async() instead."
+            )
+
         self.dependency_provider.update(ctx=as_type(self, TransactionContext))
 
         resolved_kwargs = self.dependency_provider.resolve_func_params(
             func, func_args, func_kwargs
         )
         self.resolved_kwargs.update(resolved_kwargs)
-        p = partial(func, **resolved_kwargs)
-        wrapped_handler = self._wrap_with_middlewares(p)
-        result = wrapped_handler()
-        return result
+
+        call_next = partial(func, **resolved_kwargs)
+
+        for m in self._middlewares[::-1]:
+            # middleware is async, which is not allowed
+            if asyncio.iscoroutinefunction(m):
+                raise TypeError(
+                    f"Using async middleware ({m}) with {self.__class__.__name__}.call() is not allowed. Use call_async() instead."
+                )
+
+            call_next = partial(m, self, call_next)
+
+        return call_next()
 
     async def call_async(
         self, func: Callable[..., Awaitable[Any]], *func_args: Any, **func_kwargs: Any
@@ -237,23 +253,45 @@ class TransactionContext:
         """Call an async function with the arguments and keyword arguments.
         Missing arguments will be resolved with the dependency provider.
 
+        Edge cases:
+        - middlewares and func are sync - this will behave like call()
+        - middleware is sync, and call_next is async - will raise TypeError, as middleware will not be able to wait for call_next()
+
         :param func: The function to call.
         :param func_args: Positional arguments to pass to the function.
         :param func_kwargs: Keyword arguments to pass to the function.
         :return: The result of the function call.
         """
+
         self.dependency_provider.update(ctx=as_type(self, TransactionContext))
 
         resolved_kwargs = self.dependency_provider.resolve_func_params(
             func, func_args, func_kwargs
         )
         self.resolved_kwargs.update(resolved_kwargs)
-        p = partial(func, **resolved_kwargs)
-        wrapped_handler = self._wrap_with_middlewares(p)
-        result = wrapped_handler()
-        if asyncio.iscoroutine(result):
-            result = await result
-        return result
+
+        call_next = partial(func, **resolved_kwargs)
+
+        for m in self._middlewares[::-1]:
+            if asyncio.iscoroutinefunction(m) and not asyncio.iscoroutinefunction(
+                call_next
+            ):
+                # async middleware is expecting an awaitable, so we need convert call_next to async
+                call_next = partial(maybe_await, call_next)
+
+            if not asyncio.iscoroutinefunction(m) and asyncio.iscoroutinefunction(
+                call_next
+            ):
+                # middleware is not able to retrieve call_next, as call_next is awaitable
+                raise TypeError(
+                    f"Using sync middleware ({m}) with async call_next ({call_next}) is not allowed."
+                )
+            call_next = partial(m, self, call_next)
+
+        if asyncio.iscoroutinefunction(call_next):
+            return await call_next()
+        else:
+            return call_next()
 
     def execute(self, message: Message) -> tuple[Any, ...]:
         """Executes all handlers bound to the message. Returns a tuple of handlers' return values.

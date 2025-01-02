@@ -1,3 +1,4 @@
+import asyncio
 import re
 from collections import OrderedDict
 from typing import TypeVar
@@ -29,3 +30,10 @@ def string_to_kwarg_name(string):
         valid_string = "_" + valid_string
 
     return valid_string
+
+
+async def maybe_await(func, *args, **kwargs):
+    if asyncio.iscoroutinefunction(func):
+        return await func(*args, **kwargs)
+    else:
+        return func(*args, **kwargs)

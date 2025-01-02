@@ -7,6 +7,7 @@ from lato.dependency_provider import BasicDependencyProvider, DependencyProvider
 from lato.message import Event, Message
 from lato.transaction_context import (
     ComposerFunction,
+    MessageHandler,
     MiddlewareFunction,
     OnEnterTransactionContextCallback,
     OnExitTransactionContextCallback,
@@ -147,14 +148,14 @@ class Application(ApplicationModule):
         :raises: ValueError: If no handlers are found for the message.
         """
         async with self.transaction_context() as ctx:
-            result = await ctx.execute(message)
+            result = await ctx.execute_async(message)
             return result
 
-    def emit(self, event: Event) -> dict[Callable, Any]:
+    def emit(self, event: Event) -> dict[MessageHandler, Any]:
         """Deprecated. Use `publish()` instead."""
         return self.publish(event)
 
-    def publish(self, event: Event) -> dict[Callable, Any]:
+    def publish(self, event: Event) -> dict[MessageHandler, Any]:
         """
         Publish an event by calling all handlers for that event.
 
@@ -165,7 +166,7 @@ class Application(ApplicationModule):
             result = ctx.publish(event)
         return result
 
-    async def publish_async(self, event: Event) -> dict[Callable, Any]:
+    async def publish_async(self, event: Event) -> dict[MessageHandler, Any]:
         """
         Asynchronously publish an event by calling all handlers for that event.
 
@@ -251,35 +252,35 @@ class Application(ApplicationModule):
         Decorator for registering a middleware function to be called when executing a function in a transaction context
         :param middleware_func:
         :return: the decorated function
-        
+
         **Example:**
-        
+
         >>> from typing import Callable
         >>> from lato import Application, TransactionContext
         >>>
         >>> app = Application()
-        
+
         >>> @app.transaction_middleware
         ... def middleware1(ctx: TransactionContext, call_next: Callable):
         ...     ...
-        
+
         """
-        self._transaction_middlewares.insert(0, middleware_func)
+        self._transaction_middlewares.append(middleware_func)
         return middleware_func
 
     def compose(self, alias):
         """
         Decorator for composing results of handlers identified by an alias.
-        
+
         **Example:**
-        
+
         >>> from lato import Application, Command, TransactionContext
-        
+
         >>> class SomeCommand(Command):
         ...     pass
         >>>
         >>> app = Application()
-        
+
         >>> @app.compose(SomeCommand)
         ... def middleware1(**kwargs):
         ...     ...
