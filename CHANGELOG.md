@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.12.0] - 2025-01-02
+
+- Improved handling of async functions by `TransactionContext`. Will raise `TypeError` if sync middleware is used with async handler.
+
 ## [0.11.1] - 2024-05-29
 
 - Fix type annotations in `ApplicationModule`
