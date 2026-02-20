@@ -3,9 +3,14 @@
 Message Composition and Decomposition
 =====================================
 
-If there are multiple command handlers (i.e. in different modules) for the same Command, all handlers for that
+If there are multiple command handlers in different modules for the same Command, all handlers for that
 command will be executed (decomposition), and the results of command handlers will be merged into single response
 (composition).
+
+.. note::
+    Each module can only register **one** handler per Command or Query. Attempting to register a second handler
+    for the same Command or Query within the same module will raise :class:`~lato.DuplicateHandlerError`.
+    Events are not subject to this restriction.
 
 .. literalinclude:: ../../examples/example5.py
 

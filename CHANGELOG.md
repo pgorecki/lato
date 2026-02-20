@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.13.0] - 2025-02-20
+
+### Breaking Changes
+
+- Registering multiple handlers for the same `Command` or `Query` in a single module now raises `DuplicateHandlerError` (fixes #8)
+
+### Added
+
+- `lato.exceptions` module with all custom exceptions
+- `DuplicateHandlerError(TypeError)` — raised on duplicate command/query handler registration
+- `HandlerNotFoundError(LookupError)` — raised when no handler is found for an alias or message
+- `UnknownDependencyError(KeyError)` — moved from `dependency_provider` to `exceptions`
+
 ## [0.12.4] - 2025-02-20
 
 - Moved `pytest-asyncio` from runtime to dev dependencies (fixes #9, #10)

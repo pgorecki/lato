@@ -6,10 +6,15 @@ from .application import Application
 from .application_module import ApplicationModule
 from .compositon import compose
 from .dependency_provider import BasicDependencyProvider, DependencyProvider, as_type
+from .exceptions import (
+    DuplicateHandlerError,
+    HandlerNotFoundError,
+    UnknownDependencyError,
+)
 from .message import Command, Event, Query
 from .transaction_context import TransactionContext
 
-__version__ = "0.12.4"
+__version__ = "0.13.0"
 __all__ = [
     "Application",
     "ApplicationModule",
@@ -19,6 +24,9 @@ __all__ = [
     "Command",
     "Query",
     "Event",
+    "DuplicateHandlerError",
+    "HandlerNotFoundError",
+    "UnknownDependencyError",
     "as_type",
     "compose",
 ]

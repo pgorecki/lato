@@ -43,7 +43,9 @@ def test_call_with_kwarg_and_dependency():
 
 
 def test_call_without_handlers():
+    from lato import HandlerNotFoundError
+
     ctx = TransactionContext()
     command = Command()
-    with pytest.raises(ValueError):
+    with pytest.raises(HandlerNotFoundError):
         ctx.execute(command)

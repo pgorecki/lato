@@ -12,6 +12,7 @@ from lato.dependency_provider import (
     DependencyProvider,
     as_type,
 )
+from lato.exceptions import HandlerNotFoundError
 from lato.message import Message
 from lato.types import HandlerAlias
 from lato.utils import maybe_await
@@ -298,12 +299,12 @@ class TransactionContext:
 
         :param message: The message to be executed.
         :return: a tuple of return values from executed handlers
-        :raises: ValueError: If no handlers are found for the message.
+        :raises HandlerNotFoundError: If no handlers are found for the message.
         """
         results = self.publish(message)
 
         if len(results) == 0:
-            raise ValueError("No handlers found for message", message)
+            raise HandlerNotFoundError(f"No handlers found for message: {message}")
 
         composed_result = self._compose_results(message, results)
         return composed_result
@@ -313,12 +314,12 @@ class TransactionContext:
 
         :param message: The message to be executed.
         :return: a tuple of return values from executed handlers
-        :raises: ValueError: If no handlers are found for the message.
+        :raises HandlerNotFoundError: If no handlers are found for the message.
         """
         results = await self.publish_async(message)
 
         if len(results) == 0:
-            raise ValueError("No handlers found for message", message)
+            raise HandlerNotFoundError(f"No handlers found for message: {message}")
 
         composed_result = self._compose_results(message, results)
         return composed_result

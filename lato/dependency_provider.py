@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
+from lato.exceptions import UnknownDependencyError
 from lato.types import DependencyIdentifier
 from lato.utils import OrderedDict
 
@@ -15,10 +16,6 @@ class TypedDependency:
 
 def as_type(obj: Any, cls: type) -> TypedDependency:
     return TypedDependency(obj, cls)
-
-
-class UnknownDependencyError(KeyError):
-    ...
 
 
 def get_function_parameters(func) -> OrderedDict:
