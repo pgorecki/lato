@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.12.1] - 2025-02-20
+
+- Fixed `__version__` in `lato/__init__.py` to match release version
+- Removed EOL `pypy-3.8` from CI test matrix
+
 ## [0.12.0] - 2025-01-02
 
 - Improved handling of async functions by `TransactionContext`. Will raise `TypeError` if sync middleware is used with async handler.
