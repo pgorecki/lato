@@ -1,6 +1,6 @@
 import pytest
 
-from lato import Application, Command, Event, TransactionContext
+from lato import Application, Command, DuplicateHandlerError, Event, TransactionContext
 
 
 class FooService:
@@ -192,6 +192,44 @@ def test_app_handles_external_event():
 
     task = MyEvent(message="foo")
     assert tuple(app.publish(task).values()) == ("handled foo",)
+
+
+def test_command_handler_cannot_be_registered_twice():
+    from lato import ApplicationModule
+
+    module = ApplicationModule("test")
+
+    class MyCommand(Command):
+        pass
+
+    @module.handler(MyCommand)
+    def handler_a(command: MyCommand):
+        pass
+
+    with pytest.raises(DuplicateHandlerError, match="already registered"):
+
+        @module.handler(MyCommand)
+        def handler_b(command: MyCommand):
+            pass
+
+
+def test_event_handler_can_be_registered_multiple_times():
+    from lato import ApplicationModule
+
+    module = ApplicationModule("test")
+
+    class MyEvent(Event):
+        pass
+
+    @module.handler(MyEvent)
+    def handler_a(event: MyEvent):
+        pass
+
+    @module.handler(MyEvent)
+    def handler_b(event: MyEvent):
+        pass
+
+    assert len(module.get_handlers_for(MyEvent)) == 2
 
 
 def test_create_transaction_context_callback():

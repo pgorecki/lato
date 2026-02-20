@@ -2,7 +2,8 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable
 
-from lato.message import Message
+from lato.exceptions import DuplicateHandlerError
+from lato.message import Command, Message, Query
 from lato.transaction_context import MessageHandler
 from lato.types import HandlerAlias
 from lato.utils import OrderedSet, string_to_kwarg_name
@@ -92,6 +93,15 @@ class ApplicationModule:
             """
             Decorator for registering tasks by name
             """
+            if (
+                is_message_type
+                and issubclass(alias, (Command, Query))
+                and len(self._handlers[alias]) > 0
+            ):
+                raise DuplicateHandlerError(
+                    f"A handler for {alias.__name__} is already registered in module '{self.name}'. "
+                    f"Commands and queries can only have one handler per module."
+                )
             self._handlers[alias].add(func)
             return func
 

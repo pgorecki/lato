@@ -21,3 +21,15 @@ API Reference
 .. autoclass:: lato.TransactionContext
     :members:
     :special-members: __init__
+
+Exceptions
+----------
+
+.. autoexception:: lato.DuplicateHandlerError
+    :show-inheritance:
+
+.. autoexception:: lato.HandlerNotFoundError
+    :show-inheritance:
+
+.. autoexception:: lato.UnknownDependencyError
+    :show-inheritance:

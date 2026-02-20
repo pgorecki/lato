@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 
 from lato.application_module import ApplicationModule
 from lato.dependency_provider import BasicDependencyProvider, DependencyProvider
+from lato.exceptions import HandlerNotFoundError
 from lato.message import Event, Message
 from lato.transaction_context import (
     ComposerFunction,
@@ -81,14 +82,14 @@ class Application(ApplicationModule):
 
         :return: The result of the invoked function.
 
-        :raises ValueError: If an alias is provided, but no corresponding handler is found.
+        :raises HandlerNotFoundError: If an alias is provided, but no corresponding handler is found.
         """
         if isinstance(func, str):
             try:
                 message_handler = next(self.iterate_handlers_for(alias=func))
                 func = message_handler.fn
             except StopIteration:
-                raise ValueError(f"Handler not found", func)
+                raise HandlerNotFoundError(f"Handler not found: {func}")
 
         with self.transaction_context() as ctx:
             result = ctx.call(func, *args, **kwargs)
@@ -108,14 +109,14 @@ class Application(ApplicationModule):
 
         :return: The result of the invoked function.
 
-        :raises ValueError: If an alias is provided, but no corresponding handler is found.
+        :raises HandlerNotFoundError: If an alias is provided, but no corresponding handler is found.
         """
         if isinstance(func, str):
             try:
                 message_handler = next(self.iterate_handlers_for(alias=func))
                 func = message_handler.fn
             except StopIteration:
-                raise ValueError(f"Handler not found", func)
+                raise HandlerNotFoundError(f"Handler not found: {func}")
 
         async with self.transaction_context() as ctx:
             result = await ctx.call_async(func, *args, **kwargs)
@@ -130,7 +131,7 @@ class Application(ApplicationModule):
         :param message: The message to be executed (usually, a :class:`Command` or :class:`Query` subclass).
         :return: The result of the invoked message handler.
 
-        :raises: ValueError: If no handlers are found for the message.
+        :raises HandlerNotFoundError: If no handlers are found for the message.
         """
         with self.transaction_context() as ctx:
             result = ctx.execute(message)
@@ -145,7 +146,7 @@ class Application(ApplicationModule):
         :param message: The message to be executed (usually, a :class:`Command` or :class:`Query` subclass).
         :return: The result of the invoked message handler.
 
-        :raises: ValueError: If no handlers are found for the message.
+        :raises HandlerNotFoundError: If no handlers are found for the message.
         """
         async with self.transaction_context() as ctx:
             result = await ctx.execute_async(message)
