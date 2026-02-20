@@ -3,17 +3,46 @@ name: Release
 on:
   push:
     tags:
-      - '*.*.*'
+      - 'v*.*.*'
 
 jobs:
+  wait-for-tests:
+    name: Wait for Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Tests workflow to pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Waiting for Tests workflow on commit ${{ github.sha }}..."
+          for i in $(seq 1 60); do
+            result=$(gh api repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs \
+              --jq '.check_runs[] | select(.name | test("Ubuntu|MacOS|Windows")) | .conclusion' 2>/dev/null || true)
+            if echo "$result" | grep -q "failure"; then
+              echo "Tests failed — aborting release."
+              exit 1
+            fi
+            total=$(echo "$result" | wc -l | tr -d ' ')
+            passed=$(echo "$result" | grep -c "success" || true)
+            if [ "$total" -gt 0 ] && [ "$total" -eq "$passed" ]; then
+              echo "All $total test jobs passed."
+              exit 0
+            fi
+            echo "Attempt $i: $passed/$total jobs passed so far, waiting 30s..."
+            sleep 30
+          done
+          echo "Timed out waiting for Tests workflow."
+          exit 1
+
   release:
     name: Release
+    needs: wait-for-tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.9
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -42,7 +71,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           prerelease: steps.check-version.outputs.prerelease == 'true'
-        
+
       - name: Publish to PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
