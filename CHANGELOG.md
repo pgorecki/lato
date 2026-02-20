@@ -1,11 +1,13 @@
 # Change Log
 
-## [0.12.2] - 2025-02-20
+## [0.12.3] - 2025-02-20
 
 - Fixed `__version__` in `lato/__init__.py` to match release version
 - Removed EOL `pypy-3.8` from CI test matrix
-- Dropped Python 3.9 from CI (Poetry 2.x requires Python 3.10+)
-- Updated release workflow to use Python 3.12
+- Fixed CI compatibility with Poetry 2.x (`poetry check --lock`)
+- Pin Poetry 1.8.5 for Python 3.9 CI jobs
+- Gate release workflow on Tests passing
+- Updated release workflow to Python 3.12
 
 ## [0.12.0] - 2025-01-02
 
