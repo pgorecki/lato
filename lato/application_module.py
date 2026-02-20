@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from typing import Any, TypeVar, overload
 
 from lato.exceptions import DuplicateHandlerError
 from lato.message import Command, Message, Query
@@ -10,24 +11,26 @@ from lato.utils import OrderedSet, string_to_kwarg_name
 
 log = logging.getLogger(__name__)
 
+F = TypeVar("F", bound=Callable[..., Any])
+
 
 class ApplicationModule:
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         """Initialize the application module instance.
 
         :param name: Name of the module
         """
         self.name: str = name
-        self._handlers: defaultdict[HandlerAlias, OrderedSet[Callable]] = defaultdict(
-            OrderedSet
-        )
-        self._submodules: OrderedSet[ApplicationModule] = OrderedSet()
+        self._handlers: defaultdict[
+            HandlerAlias, OrderedSet[Callable[..., Any]]
+        ] = defaultdict(OrderedSet)
+        self._submodules: OrderedSet["ApplicationModule"] = OrderedSet()
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return string_to_kwarg_name(self.name)
 
-    def include_submodule(self, a_module: "ApplicationModule"):
+    def include_submodule(self, a_module: "ApplicationModule") -> None:
         """Adds a child submodule to this module.
 
         :param a_module: child module to add
@@ -37,7 +40,15 @@ class ApplicationModule:
         ), f"Can only include {ApplicationModule} instances, got {a_module}"
         self._submodules.add(a_module)
 
-    def handler(self, alias: HandlerAlias) -> Callable:
+    @overload
+    def handler(self, alias: F) -> F:
+        ...
+
+    @overload
+    def handler(self, alias: HandlerAlias) -> Callable[[F], F]:
+        ...
+
+    def handler(self, alias: Any) -> Any:
         """
         Decorator for registering a handler. Handler can be aliased by a name or by a message type.
 
@@ -89,7 +100,7 @@ class ApplicationModule:
         # decorator was called with argument
         # @my_module.handle("my_function")
         # @my_module.handle(MyCommand)
-        def decorator(func):
+        def decorator(func: F) -> F:
             """
             Decorator for registering tasks by name
             """
@@ -107,7 +118,7 @@ class ApplicationModule:
 
         return decorator
 
-    def iterate_handlers_for(self, alias: str):
+    def iterate_handlers_for(self, alias: HandlerAlias) -> Iterator[MessageHandler]:
         if alias in self._handlers:
             for handler in self._handlers[alias]:
                 yield MessageHandler(source=self.identifier, message=alias, fn=handler)
@@ -117,8 +128,8 @@ class ApplicationModule:
             except KeyError:
                 pass
 
-    def get_handlers_for(self, alias: str):
+    def get_handlers_for(self, alias: HandlerAlias) -> list[MessageHandler]:
         return list(self.iterate_handlers_for(alias))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.name} {object.__repr__(self)}>"

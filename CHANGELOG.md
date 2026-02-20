@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.13.1] - 2026-02-20
+
+### Added
+
+- Comprehensive type annotations across all modules (issue #5)
+- `[tool.mypy]` configuration in `pyproject.toml` with `disallow_untyped_defs`, `disallow_incomplete_defs`, `check_untyped_defs`, `no_implicit_optional`, `warn_unused_ignores`, `warn_redundant_casts`
+- `@overload` signatures for `ApplicationModule.handler()` decorator to preserve decorated function types
+
 ## [0.13.0] - 2025-02-20
 
 ### Breaking Changes

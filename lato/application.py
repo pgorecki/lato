@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any, Optional, Union
+from typing import Any, Optional, TypeVar, Union
 
 from lato.application_module import ApplicationModule
 from lato.dependency_provider import BasicDependencyProvider, DependencyProvider
@@ -18,6 +18,8 @@ from lato.types import DependencyIdentifier
 
 log = logging.getLogger(__name__)
 
+F = TypeVar("F", bound=Callable[..., Any])
+
 
 class Application(ApplicationModule):
     """Core Application class.
@@ -32,10 +34,10 @@ class Application(ApplicationModule):
 
     def __init__(
         self,
-        name=__name__,
+        name: str = __name__,
         dependency_provider: Optional[DependencyProvider] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Initialize the application instance.
 
         :param name: Name of the application
@@ -48,7 +50,9 @@ class Application(ApplicationModule):
         self.dependency_provider = (
             dependency_provider or self.dependency_provider_factory(**kwargs)
         )
-        self._transaction_context_factory: Optional[Callable] = None
+        self._transaction_context_factory: Optional[
+            Callable[..., TransactionContext]
+        ] = None
         self._on_enter_transaction_context: Optional[
             OnEnterTransactionContextCallback
         ] = None
@@ -56,7 +60,7 @@ class Application(ApplicationModule):
             OnExitTransactionContextCallback
         ] = None
         self._transaction_middlewares: list[MiddlewareFunction] = []
-        self._composers: dict[Union[Message, str], ComposerFunction] = {}
+        self._composers: dict[Union[type[Message], str], ComposerFunction] = {}
 
     def get_dependency(self, identifier: DependencyIdentifier) -> Any:
         """Gets a dependency from the dependency provider. Dependencies can be resolved either by name or by type.
@@ -70,7 +74,9 @@ class Application(ApplicationModule):
     def __getitem__(self, identifier: DependencyIdentifier) -> Any:
         return self.get_dependency(identifier)
 
-    def call(self, func: Union[Callable[..., Any], str], *args, **kwargs) -> Any:
+    def call(
+        self, func: Union[Callable[..., Any], str], *args: Any, **kwargs: Any
+    ) -> Any:
         """Invokes a function with `args` and `kwargs` within the :class:`TransactionContext`.
         If `func` is a string, then it is an alias, and the corresponding handler for the alias is retrieved.
         Any missing arguments are provided by the dependency provider of a transaction context,
@@ -96,7 +102,7 @@ class Application(ApplicationModule):
         return result
 
     async def call_async(
-        self, func: Union[Callable[..., Awaitable[Any]], str], *args, **kwargs
+        self, func: Union[Callable[..., Awaitable[Any]], str], *args: Any, **kwargs: Any
     ) -> Any:
         """Invokes an async function with `args` and `kwargs` within the :class:`TransactionContext`.
         If `func` is a string, then it is an alias, and the corresponding handler for the alias is retrieved.
@@ -178,7 +184,7 @@ class Application(ApplicationModule):
             result = await ctx.publish_async(event)
         return result
 
-    def on_enter_transaction_context(self, func):
+    def on_enter_transaction_context(self, func: F) -> F:
         """
         Decorator for registering a function to be called when entering a transaction context
 
@@ -201,7 +207,7 @@ class Application(ApplicationModule):
         self._on_enter_transaction_context = func
         return func
 
-    def on_exit_transaction_context(self, func):
+    def on_exit_transaction_context(self, func: F) -> F:
         """
         Decorator for registering a function to be called when exiting a transaction context
 
@@ -223,7 +229,7 @@ class Application(ApplicationModule):
         self._on_exit_transaction_context = func
         return func
 
-    def on_create_transaction_context(self, func):
+    def on_create_transaction_context(self, func: F) -> F:
         """
         Decorator for overriding default transaction context creation
 
@@ -248,7 +254,7 @@ class Application(ApplicationModule):
         self._transaction_context_factory = func
         return func
 
-    def transaction_middleware(self, middleware_func):
+    def transaction_middleware(self, middleware_func: F) -> F:
         """
         Decorator for registering a middleware function to be called when executing a function in a transaction context
         :param middleware_func:
@@ -269,7 +275,7 @@ class Application(ApplicationModule):
         self._transaction_middlewares.append(middleware_func)
         return middleware_func
 
-    def compose(self, alias):
+    def compose(self, alias: Any) -> Callable[[F], F]:
         """
         Decorator for composing results of handlers identified by an alias.
 
@@ -287,13 +293,13 @@ class Application(ApplicationModule):
         ...     ...
         """
 
-        def decorator(func):
+        def decorator(func: F) -> F:
             self._composers[alias] = func
             return func
 
         return decorator
 
-    def transaction_context(self, **dependencies) -> TransactionContext:
+    def transaction_context(self, **dependencies: Any) -> TransactionContext:
         """Creates a transaction context for the app.
 
         The lifecycle of a transaction context is controlled by :func:`transaction_middleware`,

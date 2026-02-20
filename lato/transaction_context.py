@@ -4,6 +4,7 @@ from collections import OrderedDict
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from functools import partial
+from types import TracebackType
 from typing import Any, Optional, Union
 
 from lato.compositon import compose
@@ -14,7 +15,7 @@ from lato.dependency_provider import (
 )
 from lato.exceptions import HandlerNotFoundError
 from lato.message import Message
-from lato.types import HandlerAlias
+from lato.types import DependencyIdentifier, HandlerAlias
 from lato.utils import maybe_await
 
 log = logging.getLogger(__name__)
@@ -24,18 +25,16 @@ log = logging.getLogger(__name__)
 class MessageHandler:
     source: str
     message: HandlerAlias
-    fn: Callable
+    fn: Callable[..., Any]
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.source, self.fn))
 
 
-OnEnterTransactionContextCallback = Callable[["TransactionContext"], Awaitable[None]]
-OnExitTransactionContextCallback = Callable[
-    ["TransactionContext", Optional[Exception]], Awaitable[None]
-]
-MiddlewareFunction = Callable[["TransactionContext", Callable], Awaitable[Any]]
-ComposerFunction = Callable[..., Callable]
+OnEnterTransactionContextCallback = Callable[..., Any]
+OnExitTransactionContextCallback = Callable[..., Any]
+MiddlewareFunction = Callable[["TransactionContext", Callable[..., Any]], Any]
+ComposerFunction = Callable[..., Any]
 HandlersIterator = Callable[[HandlerAlias], Iterator[MessageHandler]]
 
 
@@ -59,8 +58,11 @@ class TransactionContext:
     dependency_provider_factory = BasicDependencyProvider
 
     def __init__(
-        self, dependency_provider: Optional[DependencyProvider] = None, *args, **kwargs
-    ):
+        self,
+        dependency_provider: Optional[DependencyProvider] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the transaction context instance.
 
         :param dependency_provider: dependency provider :class:`DependencyProvider` instance.
@@ -93,7 +95,7 @@ class TransactionContext:
         middlewares: Optional[list[MiddlewareFunction]] = None,
         composers: Optional[dict[HandlerAlias, ComposerFunction]] = None,
         handlers_iterator: Optional[HandlersIterator] = None,
-    ):
+    ) -> None:
         """Customize the behavior of the transaction context with callbacks, middlewares, and composers.
 
         :param on_enter_transaction_context: Optional; Function to be called when entering a transaction context.
@@ -113,7 +115,7 @@ class TransactionContext:
         if handlers_iterator:
             self._handlers_iterator = handlers_iterator
 
-    def begin(self):
+    def begin(self) -> None:
         """Starts a transaction by calling `on_enter_transaction_context` callback.
 
         The callback could be used to set up the transaction-level dependencies (i.e. current time, transaction id),
@@ -127,7 +129,7 @@ class TransactionContext:
                 )
             self._on_enter_transaction_context(self)
 
-    async def begin_async(self):
+    async def begin_async(self) -> None:
         """Asynchronously starts a transaction by calling async `on_enter_transaction_context` callback.
 
         The callback could be used to set up the transaction-level dependencies (i.e. current time, transaction id),
@@ -139,7 +141,7 @@ class TransactionContext:
             if asyncio.iscoroutine(result):
                 await result
 
-    def end(self, exception: Optional[Exception] = None):
+    def end(self, exception: Optional[Exception] = None) -> None:
         """Ends the transaction context by calling `on_exit_transaction_context` callback,
         optionally passing an exception.
 
@@ -159,7 +161,7 @@ class TransactionContext:
         else:
             log.debug("Ended transaction")
 
-    async def end_async(self, exception: Optional[Exception] = None):
+    async def end_async(self, exception: Optional[Exception] = None) -> None:
         """Ends the transaction context by calling `on_exit_transaction_context` callback,
         optionally passing an exception.
 
@@ -191,28 +193,40 @@ class TransactionContext:
             + [asyncio.iscoroutinefunction(self._on_exit_transaction_context)]
         )
 
-    def iterate_handlers_for(self, alias: str):
+    def iterate_handlers_for(self, alias: HandlerAlias) -> Iterator[MessageHandler]:
         yield from self._handlers_iterator(alias)
 
-    def __enter__(self):
+    def __enter__(self) -> "TransactionContext":
         self.begin()
         return self
 
-    def __exit__(self, exc_type=None, exc_val=None, exc_tb=None):
-        self.end(exc_val)
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]] = None,
+        exc_val: Optional[BaseException] = None,
+        exc_tb: Optional[TracebackType] = None,
+    ) -> None:
+        self.end(exc_val)  # type: ignore[arg-type]
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "TransactionContext":
         result = self.begin_async()
         if asyncio.iscoroutine(result):
             await result
         return self
 
-    async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None):
-        result = self.end_async(exc_val)
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]] = None,
+        exc_val: Optional[BaseException] = None,
+        exc_tb: Optional[TracebackType] = None,
+    ) -> None:
+        result = self.end_async(exc_val)  # type: ignore[arg-type]
         if asyncio.iscoroutine(result):
             await result
 
-    def call(self, func: Callable, *func_args: Any, **func_kwargs: Any) -> Any:
+    def call(
+        self, func: Callable[..., Any], *func_args: Any, **func_kwargs: Any
+    ) -> Any:
         """Call a function with the arguments and keyword arguments.
         Missing arguments will be resolved with the dependency provider.
 
@@ -294,7 +308,7 @@ class TransactionContext:
         else:
             return call_next()
 
-    def execute(self, message: Message) -> tuple[Any, ...]:
+    def execute(self, message: Message) -> Any:
         """Executes all handlers bound to the message. Returns a tuple of handlers' return values.
 
         :param message: The message to be executed.
@@ -309,7 +323,7 @@ class TransactionContext:
         composed_result = self._compose_results(message, results)
         return composed_result
 
-    async def execute_async(self, message: Message) -> tuple[Any, ...]:
+    async def execute_async(self, message: Message) -> Any:
         """Executes all async handlers bound to the message. Returns a tuple of handlers' return values.
 
         :param message: The message to be executed.
@@ -325,13 +339,13 @@ class TransactionContext:
         return composed_result
 
     def emit(
-        self, message: Union[str, Message], *args, **kwargs
+        self, message: Union[str, Message], *args: Any, **kwargs: Any
     ) -> dict[MessageHandler, Any]:
         # TODO: mark as obsolete
         return self.publish(message, *args, **kwargs)
 
     def publish(
-        self, message: Union[str, Message], *args, **kwargs
+        self, message: Union[str, Message], *args: Any, **kwargs: Any
     ) -> dict[MessageHandler, Any]:
         """
         Publish a message by calling all handlers for that message.
@@ -346,8 +360,8 @@ class TransactionContext:
         if isinstance(message, Message):
             args = (message, *args)
 
-        all_results = OrderedDict()
-        for handler in self._handlers_iterator(message_type):  # type: ignore
+        all_results: OrderedDict[MessageHandler, Any] = OrderedDict()
+        for handler in self._handlers_iterator(message_type):  # type: ignore[arg-type]
             self.set_dependency("message", message)
             # FIXME: push and pop current action instead of setting it
             self.current_handler = handler
@@ -356,8 +370,8 @@ class TransactionContext:
         return all_results
 
     async def publish_async(
-        self, message: Union[str, Message], *args, **kwargs
-    ) -> dict[MessageHandler, Awaitable[Any]]:
+        self, message: Union[str, Message], *args: Any, **kwargs: Any
+    ) -> dict[MessageHandler, Any]:
         """
         Asynchronously publish a message by calling all handlers for that message.
 
@@ -371,9 +385,9 @@ class TransactionContext:
         if isinstance(message, Message):
             args = (message, *args)
 
-        all_results = OrderedDict()
+        all_results: OrderedDict[MessageHandler, Any] = OrderedDict()
         # TODO: use asyncio.gather()
-        for handler in self._handlers_iterator(message_type):  # type: ignore
+        for handler in self._handlers_iterator(message_type):  # type: ignore[arg-type]
             self.set_dependency("message", message)
             # FIXME: push and pop current action instead of setting it
             self.current_handler = (
@@ -383,20 +397,20 @@ class TransactionContext:
             all_results[handler] = result
         return all_results
 
-    def get_dependency(self, identifier: Any) -> Any:
+    def get_dependency(self, identifier: DependencyIdentifier) -> Any:
         """Gets a dependency from the dependency provider"""
         return self.dependency_provider.get_dependency(identifier)
 
-    def set_dependency(self, identifier: Any, dependency: Any) -> None:
+    def set_dependency(self, identifier: DependencyIdentifier, dependency: Any) -> None:
         """Sets a dependency in the dependency provider"""
         self.dependency_provider.register_dependency(identifier, dependency)
 
-    def set_dependencies(self, **kwargs):
+    def set_dependencies(self, **kwargs: Any) -> None:
         # TODO: add *args
         """Sets multiple dependencies at once"""
         self.dependency_provider.update(**kwargs)
 
-    def __getitem__(self, item) -> Any:
+    def __getitem__(self, item: DependencyIdentifier) -> Any:
         return self.get_dependency(item)
 
     def _compose_results(
@@ -410,6 +424,6 @@ class TransactionContext:
         return composer(**kwargs)
 
     @property
-    def current_action(self) -> tuple[Message, Callable]:
+    def current_action(self) -> tuple[Message, Callable[..., Any]]:
         """Returns current message and handler being executed"""
-        return self.get_dependency("message"), self.current_handler  # type: ignore
+        return self.get_dependency("message"), self.current_handler  # type: ignore[return-value]
