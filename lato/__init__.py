@@ -9,7 +9,7 @@ from .dependency_provider import BasicDependencyProvider, DependencyProvider, as
 from .message import Command, Event, Query
 from .transaction_context import TransactionContext
 
-__version__ = "0.12.3"
+__version__ = "0.12.4"
 __all__ = [
     "Application",
     "ApplicationModule",
