@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.12.4] - 2025-02-20
+
+- Moved `pytest-asyncio` from runtime to dev dependencies (fixes #9, #10)
+
 ## [0.12.3] - 2025-02-20
 
 - Fixed `__version__` in `lato/__init__.py` to match release version
