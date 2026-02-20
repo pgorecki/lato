@@ -1,15 +1,15 @@
 import inspect
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from collections.abc import Callable
 from typing import Any
 
 from lato.exceptions import UnknownDependencyError
 from lato.types import DependencyIdentifier
-from lato.utils import OrderedDict
 
 
 class TypedDependency:
-    def __init__(self, value, a_type):
+    def __init__(self, value: Any, a_type: type) -> None:
         self.value = value
         self.a_type = a_type
 
@@ -18,7 +18,7 @@ def as_type(obj: Any, cls: type) -> TypedDependency:
     return TypedDependency(obj, cls)
 
 
-def get_function_parameters(func) -> OrderedDict:
+def get_function_parameters(func: Callable[..., Any]) -> OrderedDict[str, Any]:
     """
     Retrieve the function's parameters and their annotations.
 
@@ -27,7 +27,7 @@ def get_function_parameters(func) -> OrderedDict:
     """
     handler_signature = inspect.signature(func)
     kwargs_iterator = iter(handler_signature.parameters.items())
-    parameters = OrderedDict()
+    parameters: OrderedDict[str, Any] = OrderedDict()
     for name, param in kwargs_iterator:
         parameters[name] = param.annotation
     return parameters
@@ -55,7 +55,9 @@ class DependencyProvider(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def register_dependency(self, identifier: DependencyIdentifier, dependency: Any):
+    def register_dependency(
+        self, identifier: DependencyIdentifier, dependency: Any
+    ) -> None:
         """
         Register a dependency with a given identifier (name or type).
 
@@ -74,7 +76,7 @@ class DependencyProvider(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, *args, **kwargs) -> "DependencyProvider":
+    def copy(self, *args: Any, **kwargs: Any) -> "DependencyProvider":
         """Creates a copy of self with updated dependencies.
 
         :param args: dependencies to update, identified by type.
@@ -82,7 +84,7 @@ class DependencyProvider(ABC):
         :return: A copy of the dependency provider.
         """
 
-    def update(self, *args, **kwargs):
+    def update(self, *args: Any, **kwargs: Any) -> None:
         """
         Updates the dependency provider with new dependencies.
 
@@ -101,7 +103,7 @@ class DependencyProvider(ABC):
             if self.allow_types:
                 self.register_dependency(t, v)
 
-    def _get_type_and_value(self, value):
+    def _get_type_and_value(self, value: Any) -> tuple[type, Any]:
         if isinstance(value, TypedDependency):
             return value.a_type, value.value
         return type(value), value
@@ -128,7 +130,7 @@ class DependencyProvider(ABC):
             func_kwargs = {}
 
         func_parameters = get_function_parameters(func)
-        resolved_kwargs = OrderedDict()
+        resolved_kwargs: OrderedDict[str, Any] = OrderedDict()
         arg_idx = 0
         for param_name, param_type in func_parameters.items():
             if arg_idx < len(func_args):
@@ -151,10 +153,10 @@ class DependencyProvider(ABC):
 
         return resolved_kwargs
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: DependencyIdentifier) -> Any:
         return self.get_dependency(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: DependencyIdentifier, value: Any) -> None:
         self.register_dependency(key, value)
 
 
@@ -164,16 +166,18 @@ class BasicDependencyProvider(DependencyProvider):
     dependency injection based on type or parameter name.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the DependencyProvider.
 
         :param args: Class instances to be registered by types
         :param kwargs: Dependencies to be registered by types and with explicit names
         """
-        self._dependencies = {}
+        self._dependencies: dict[DependencyIdentifier, Any] = {}
         self.update(*args, **kwargs)
 
-    def register_dependency(self, identifier: DependencyIdentifier, dependency: Any):
+    def register_dependency(
+        self, identifier: DependencyIdentifier, dependency: Any
+    ) -> None:
         """
         Register a dependency with a given identifier (name or type).
 
@@ -206,7 +210,7 @@ class BasicDependencyProvider(DependencyProvider):
         except KeyError as e:
             raise UnknownDependencyError(identifier)
 
-    def copy(self, *args, **kwargs) -> DependencyProvider:
+    def copy(self, *args: Any, **kwargs: Any) -> "BasicDependencyProvider":
         """
         Create a copy of self with updated dependencies.
         :param args: typed overrides

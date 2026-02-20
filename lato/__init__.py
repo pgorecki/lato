@@ -1,5 +1,4 @@
 import logging
-import typing
 from logging import NullHandler
 
 from .application import Application
@@ -14,7 +13,7 @@ from .exceptions import (
 from .message import Command, Event, Query
 from .transaction_context import TransactionContext
 
-__version__ = "0.13.0"
+__version__ = "0.13.1"
 __all__ = [
     "Application",
     "ApplicationModule",
